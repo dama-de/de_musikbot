@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 import os
 from discord.ext import commands
 
-
 load_dotenv(verbose=True)
 
 lastfm_icon = "https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/196_Lastfm_Square_logo_logos-512.png"
@@ -102,6 +101,12 @@ periods = {"all": pylast.PERIOD_OVERALL,
            "6m": pylast.PERIOD_6MONTHS,
            "12m": pylast.PERIOD_12MONTHS}
 
+col1_width = 22
+col2_width = 22
+
+tbl_format = "{:>2}|{:#.#}|{:$.$}|{:>4}\n".replace("#", str(col1_width)).replace("$", str(col2_width))
+tbl_artist_format = "{:>2}|{:#.#}|{:>4}\n".replace("#", str(col1_width + col2_width + 1))
+
 
 @last.command()
 async def tracks(ctx, period="all"):
@@ -114,9 +119,18 @@ async def tracks(ctx, period="all"):
     embed = discord.Embed(title="Top tracks (" + period + ")")
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-    embed.add_field(name="Artist", value="\n".join([t.item.artist.name[:28] for t in top_tracks]))
-    embed.add_field(name="Title", value="\n".join([t.item.title[:28] for t in top_tracks]))
-    embed.add_field(name="Scrobbles", value="\n".join([str(t.weight) for t in top_tracks]))
+    col_artists = [t.item.artist.name for t in top_tracks]
+    col_titles = [t.item.title for t in top_tracks]
+    col_scrobbles = [t.weight for t in top_tracks]
+
+    description = "```\n"
+    description += tbl_format.format("No", "Artist", "Title", "Scr.").replace(" ", "_")
+
+    for i in range(len(col_artists)):
+        description += tbl_format.format(i + 1, col_artists[i], col_titles[i], col_scrobbles[i])
+
+    description += "```"
+    embed.description = description
 
     await ctx.send(embed=embed)
 
@@ -132,9 +146,18 @@ async def albums(ctx, period="all"):
     embed = discord.Embed(title="Top albums (" + period + ")")
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-    embed.add_field(name="Artist", value="\n".join([t.item.artist.name[:28] for t in top_albums]))
-    embed.add_field(name="Title", value="\n".join([t.item.title[:28] for t in top_albums]))
-    embed.add_field(name="Scrobbles", value="\n".join([str(t.weight) for t in top_albums]))
+    col_artists = [t.item.artist.name for t in top_albums]
+    col_titles = [t.item.title for t in top_albums]
+    col_scrobbles = [t.weight for t in top_albums]
+
+    description = "```\n"
+    description += tbl_format.format("No", "Artist", "Album", "Scr.").replace(" ", "_")
+
+    for i in range(len(col_artists)):
+        description += tbl_format.format(i + 1, col_artists[i], col_titles[i], col_scrobbles[i])
+
+    description += "```"
+    embed.description = description
 
     await ctx.send(embed=embed)
 
@@ -150,8 +173,17 @@ async def artists(ctx, period="all"):
     embed = discord.Embed(title="Top artists (" + period + ")")
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-    embed.add_field(name="Artist", value="\n".join([t.item.name[:50] for t in top_artists]))
-    embed.add_field(name="Scrobbles", value="\n".join([str(t.weight) for t in top_artists]))
+    col_artist = [t.item.name for t in top_artists]
+    col_scrobbles = [t.weight for t in top_artists]
+
+    description = "```\n"
+    description += tbl_artist_format.format("No", "Artist", "Scr.").replace(" ", "_")
+
+    for i in range(len(col_artist)):
+        description += tbl_artist_format.format(i + 1, col_artist[i], col_scrobbles[i])
+
+    description += "```"
+    embed.description = description
 
     await ctx.send(embed=embed)
 
@@ -190,6 +222,7 @@ async def on_command_error(ctx, error):
     print(error)
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Missing argument '" + error.param.name + "'")
+
 
 API_KEY = os.environ["LAST_API_KEY"]
 API_SECRET = os.environ["LAST_API_SECRET"]
