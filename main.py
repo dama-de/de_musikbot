@@ -228,10 +228,7 @@ async def on_command_error(ctx, error):
 
 API_KEY = os.environ["LAST_API_KEY"]
 API_SECRET = os.environ["LAST_API_SECRET"]
-lastfm_net = pylast.LastFMNetwork(
-    api_key=API_KEY,
-    api_secret=API_SECRET
-)
+lastfm_net = pylast.LastFMNetwork(api_key=API_KEY, api_secret=API_SECRET)
 
 CLIENT_ID = os.environ["SPOTIFY_CLIENT_ID"]
 CLIENT_SECRET = os.environ["SPOTIFY_CLIENT_SECRET"]
