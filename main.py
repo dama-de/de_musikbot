@@ -29,6 +29,11 @@ def load():
             data = json.loads(file.read())
 
 
+@bot.event
+async def on_ready():
+    print("Online.")
+
+
 @bot.group()
 async def last(ctx):
     pass
