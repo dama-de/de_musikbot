@@ -56,19 +56,27 @@ async def now(ctx):
     track = now_playing.get_title(properly_capitalized=False)
     album = now_playing.get_album().get_title(properly_capitalized=False)
     # tags = now_playing.get_album().get_top_tags()
+    img_url = now_playing.get_album().get_cover_image(pylast.SIZE_MEGA)
 
-    sp_result = spotify_api.search(" ".join([artist, track, album]))
-    sp_url = sp_result[0].items[0].external_urls["spotify"]
-    sp_img = sp_result[0].items[0].album.images[0].url
-    release_date = sp_result[0].items[0].album.release_date
-
-    title = "{} - {}".format(artist, track)
-    description = "{} ({})".format(album, release_date[:4])
-    embed = discord.Embed(title=title, description=description, url=sp_url)
+    embed = discord.Embed(title="{} - {}".format(artist, track), description=album)
     embed.set_author(name=author, icon_url=ctx.author.avatar_url)
-    embed.set_thumbnail(url=sp_img)
     embed.set_footer(text="Now scrobbling on last.fm",
                      icon_url=lastfm_icon)
+
+    if img_url:
+        embed.set_thumbnail(url=img_url)
+
+    # Try to enhance with Spotify data
+    sp_result = spotify_api.search(" ".join([artist, track, album]))
+    if sp_result[0].items:
+        sp_url = sp_result[0].items[0].external_urls["spotify"]
+        sp_img = sp_result[0].items[0].album.images[0].url
+        release_date = sp_result[0].items[0].album.release_date
+
+        embed.description = "{} ({})".format(album, release_date[:4])
+        embed.url = sp_url
+        embed.set_thumbnail(url=sp_img)
+
     await ctx.send(embed=embed)
 
 
