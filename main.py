@@ -8,8 +8,6 @@ from discord.ext import commands
 
 load_dotenv(verbose=True)
 
-lastfm_icon = "https://cdn4.iconfinder.com/data/icons/logos-and-brands/512/196_Lastfm_Square_logo_logos-512.png"
-
 datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
 datafile = os.path.join(datadir, "data.json")
 data = {"names": {"132551667085344769": "dam4rusxp"}}
@@ -59,8 +57,7 @@ async def now(ctx):
 
     embed = discord.Embed(title="{} - {}".format(artist, track), description=album)
     embed.set_author(name=author, icon_url=ctx.author.avatar_url)
-    embed.set_footer(text="Now scrobbling on last.fm",
-                     icon_url=lastfm_icon)
+    embed.set_footer(text="Now scrobbling on last.fm")
 
     if img_url:
         embed.set_thumbnail(url=img_url)
