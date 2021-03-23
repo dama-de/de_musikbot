@@ -219,6 +219,36 @@ async def album(ctx, *, search_query):
     await ctx.send(embed=embed)
 
 
+@bot.command()
+async def artist(ctx, *, search_query) :
+    last_result = lastfm_net.search_for_artist(search_query).get_next_page()[0]
+
+    artist = last_result.get_name(properly_capitalized=True)
+    last_url = last_result.get_url()
+    bio = last_result.get_bio("summary").split("<a href")[0]
+    top_tags = [t.item.name for t in last_result.get_top_tags(limit=5) if int(t.weight) >= 75]
+
+    embed = discord.Embed()
+    embed.title = artist
+    embed.url = last_url
+    description = "{}\n\nTop Tags: {}".format(bio, ", ".join(top_tags))
+
+    sp_result = spotify_api.search(artist, types=("artist",), limit=1)
+    if sp_result[0].items:
+        # artist_id = sp_result[0].items[0].id
+        # artist = sp_result[0].items[0].name
+        # genres = ", ".join(sp_result[0].items[0].genres)
+        # popularity = sp_result[0].items[0].popularity
+        sp_url = sp_result[0].items[0].external_urls["spotify"]
+        description += "\n\n[Spotify]({}) | [Last.fm]({})".format(sp_url, last_url)
+        img_url = sp_result[0].items[0].images[0].url
+        embed.set_thumbnail(url=img_url)
+
+    embed.description = description
+
+    await ctx.send(embed=embed)
+
+
 @bot.event
 async def on_command_error(ctx, error):
     print(error)
