@@ -226,7 +226,7 @@ async def artist(ctx, *, search_query) :
     artist = last_result.get_name(properly_capitalized=True)
     last_url = last_result.get_url()
     bio = last_result.get_bio("summary").split("<a href")[0]
-    top_tags = [t.item.name for t in last_result.get_top_tags(limit=5) if int(t.weight) >= 75]
+    top_tags = [t.item.name for t in last_result.get_top_tags(limit=6) if int(t.weight) >= 10]
 
     embed = discord.Embed()
     embed.title = artist
