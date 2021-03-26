@@ -117,6 +117,17 @@ tbl_format = "{:>2}|{:#.#}|{:$.$}|{:>4}\n".replace("#", str(col1_width)).replace
 tbl_artist_format = "{:>2}|{:#.#}|{:>4}\n".replace("#", str(col1_width + col2_width + 1))
 
 
+def make_table(format_string, cols: dict):
+    table = "```\n"
+    table += format_string.format(*cols.keys()).replace(" ", "_")
+
+    for items in zip(*cols.values()):
+        table += format_string.format(*items)
+
+    table += "```"
+    return table
+
+
 @last.command()
 async def tracks(ctx, period="all"):
     if period not in periods:
@@ -125,21 +136,17 @@ async def tracks(ctx, period="all"):
     lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
     top_tracks = lfmuser.get_top_tracks(period=periods[period], limit=10)
 
-    embed = discord.Embed(title="Top tracks (" + period + ")")
+    cols = {
+        "No": range(1, len(top_tracks) + 1),
+        "Artist": [t.item.artist.name for t in top_tracks],
+        "Title": [t.item.title for t in top_tracks],
+        "Scr.": [t.weight for t in top_tracks]
+    }
+
+    description = make_table(tbl_format, cols)
+
+    embed = discord.Embed(title="Top tracks (" + period + ")", description=description)
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-    col_artists = [t.item.artist.name for t in top_tracks]
-    col_titles = [t.item.title for t in top_tracks]
-    col_scrobbles = [t.weight for t in top_tracks]
-
-    description = "```\n"
-    description += tbl_format.format("No", "Artist", "Title", "Scr.").replace(" ", "_")
-
-    for i in range(len(col_artists)):
-        description += tbl_format.format(i + 1, col_artists[i], col_titles[i], col_scrobbles[i])
-
-    description += "```"
-    embed.description = description
 
     await ctx.send(embed=embed)
 
@@ -152,21 +159,17 @@ async def albums(ctx, period="all"):
     lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
     top_albums = lfmuser.get_top_albums(period=periods[period], limit=10)
 
-    embed = discord.Embed(title="Top albums (" + period + ")")
+    cols = {
+        "No": range(1, len(top_albums) + 1),
+        "Artist": [t.item.artist.name for t in top_albums],
+        "Album": [t.item.title for t in top_albums],
+        "Scr.": [t.weight for t in top_albums]
+    }
+
+    description = make_table(tbl_format, cols)
+
+    embed = discord.Embed(title="Top albums (" + period + ")", description=description)
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-    col_artists = [t.item.artist.name for t in top_albums]
-    col_titles = [t.item.title for t in top_albums]
-    col_scrobbles = [t.weight for t in top_albums]
-
-    description = "```\n"
-    description += tbl_format.format("No", "Artist", "Album", "Scr.").replace(" ", "_")
-
-    for i in range(len(col_artists)):
-        description += tbl_format.format(i + 1, col_artists[i], col_titles[i], col_scrobbles[i])
-
-    description += "```"
-    embed.description = description
 
     await ctx.send(embed=embed)
 
@@ -179,20 +182,16 @@ async def artists(ctx, period="all"):
     lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
     top_artists = lfmuser.get_top_artists(period=periods[period], limit=10)
 
-    embed = discord.Embed(title="Top artists (" + period + ")")
+    cols = {
+        "No": range(1, len(top_artists) + 1),
+        "Artist": [t.item.name for t in top_artists],
+        "Scr.": [t.weight for t in top_artists]
+    }
+
+    description = make_table(tbl_artist_format, cols)
+
+    embed = discord.Embed(title="Top artists (" + period + ")", description=description)
     embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-    col_artist = [t.item.name for t in top_artists]
-    col_scrobbles = [t.weight for t in top_artists]
-
-    description = "```\n"
-    description += tbl_artist_format.format("No", "Artist", "Scr.").replace(" ", "_")
-
-    for i in range(len(col_artist)):
-        description += tbl_artist_format.format(i + 1, col_artist[i], col_scrobbles[i])
-
-    description += "```"
-    embed.description = description
 
     await ctx.send(embed=embed)
 
