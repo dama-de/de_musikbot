@@ -269,7 +269,7 @@ async def artist(ctx, *, search_query):
 
 @bot.event
 async def on_command_error(ctx, error):
-    print(error)
+    traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Missing argument '" + error.param.name + "'")
 
