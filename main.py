@@ -36,8 +36,8 @@ async def on_ready():
 
 @bot.group()
 async def last(ctx):
-    pass
-
+    if not ctx.invoked_subcommand:
+        await ctx.send("Try `{}help`".format(ctx.prefix))
 
 @last.command()
 async def register(ctx: discord.ext.commands.Context, lastfm_name):
