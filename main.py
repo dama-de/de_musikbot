@@ -56,13 +56,20 @@ async def now(ctx):
 
     artist = now_playing.get_artist().name
     track = now_playing.get_title(properly_capitalized=False)
-    album = now_playing.get_album().get_title(properly_capitalized=False)
     # tags = now_playing.get_album().get_top_tags()
-    img_url = now_playing.get_album().get_cover_image(pylast.SIZE_MEGA)
 
-    embed = discord.Embed(title="{} - {}".format(artist, track), description=album)
+    embed = discord.Embed(title="{} - {}".format(artist, track))
     embed.set_author(name=author, icon_url=ctx.author.avatar_url)
     embed.set_footer(text="Now scrobbling on last.fm")
+
+    if now_playing.get_album():
+        album = now_playing.get_album().get_title(properly_capitalized=False)
+        img_url = now_playing.get_album().get_cover_image(pylast.SIZE_MEGA)
+    else:
+        album = ""
+        img_url = None
+
+    embed.description = album
 
     if img_url:
         embed.set_thumbnail(url=img_url)
