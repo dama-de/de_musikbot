@@ -1,32 +1,12 @@
 import discord
-import json
-import pylast
-import tekore as tk
-from dotenv import load_dotenv
-import os
 from discord.ext import commands
+from discord.utils import find
 
-load_dotenv(verbose=True)
+from music import *
 
-datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
-datafile = os.path.join(datadir, "data.json")
 data = {"names": {"132551667085344769": "dam4rusxp"}}
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
-
-
-def save():
-    global data
-    with open(datafile, "w") as file:
-        file.write(json.dumps(data))
-        file.close()
-
-
-def load():
-    global data
-    if os.path.exists(os.path.join(datadir, "data.json")):
-        with open(datafile, "r") as file:
-            data = json.loads(file.read())
 
 
 @bot.event
@@ -38,6 +18,7 @@ async def on_ready():
 async def last(ctx):
     if not ctx.invoked_subcommand:
         await ctx.send("Try `{}help`".format(ctx.prefix))
+
 
 @last.command()
 async def register(ctx: discord.ext.commands.Context, lastfm_name):
@@ -206,38 +187,45 @@ async def track(ctx, *, search_query):
 
 @bot.command()
 async def album(ctx, *, search_query):
+    urls = dict()
     result = spotify_api.search(search_query, types=("album",))
 
     album = result[0].items[0]
     artist = ", ".join([a.name for a in album.artists])
-    url = album.external_urls["spotify"]
+    urls["Spotify"] = album.external_urls["spotify"]
     image = album.images[0].url
     year = album.release_date[:4]
 
     album_detail = spotify_api.album(album.id)
+
     full_length_ms = sum([t.duration_ms for t in album_detail.tracks.items])
     minutes = int(full_length_ms / 60_000)
-
     length = "{} min".format(minutes)
-    description = "{} • {} songs, {}".format(year, album.total_tracks, length)
-    embed = discord.Embed(title=album.name, description=artist, url=url)
-    embed.set_footer(text=description)
+
+    urls["RYM"] = rym_search(album.name)
+
+    description = f"{artist}\n\n{mklinks(urls)}"
+    footer = "{} • {} songs, {}".format(year, album.total_tracks, length)
+
+    embed = discord.Embed(title=album.name, description=description, url=urls["Spotify"])
+    embed.set_footer(text=footer)
     embed.set_thumbnail(url=image)
+
     await ctx.send(embed=embed)
 
 
 @bot.command()
-async def artist(ctx, *, search_query) :
+async def artist(ctx, *, search_query):
+    urls = dict()
     last_result = lastfm_net.search_for_artist(search_query).get_next_page()[0]
 
     artist = last_result.get_name(properly_capitalized=True)
-    last_url = last_result.get_url()
+    urls["Last.fm"] = last_result.get_url()
     bio = last_result.get_bio("summary").split("<a href")[0]
     top_tags = [t.item.name for t in last_result.get_top_tags(limit=6) if int(t.weight) >= 10]
 
     embed = discord.Embed()
     embed.title = artist
-    embed.url = last_url
     description = "{}\n\nTop Tags: {}".format(bio, ", ".join(top_tags))
 
     sp_result = spotify_api.search(artist, types=("artist",), limit=1)
@@ -246,11 +234,15 @@ async def artist(ctx, *, search_query) :
         # artist = sp_result[0].items[0].name
         # genres = ", ".join(sp_result[0].items[0].genres)
         # popularity = sp_result[0].items[0].popularity
-        sp_url = sp_result[0].items[0].external_urls["spotify"]
-        description += "\n\n[Spotify]({}) | [Last.fm]({})".format(sp_url, last_url)
+        urls["Spotify"] = sp_result[0].items[0].external_urls["spotify"]
         img_url = sp_result[0].items[0].images[0].url
         embed.set_thumbnail(url=img_url)
 
+    urls["RYM"] = rym_search(artist)
+
+    description += f"\n\n{mklinks(urls)}"
+    chosenkey = find(lambda key: key in urls, ["Spotify", "Last.fm", "RYM"])
+    embed.url = urls[chosenkey]
     embed.description = description
 
     await ctx.send(embed=embed)
@@ -262,14 +254,6 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Missing argument '" + error.param.name + "'")
 
-
-API_KEY = os.environ["LAST_API_KEY"]
-API_SECRET = os.environ["LAST_API_SECRET"]
-lastfm_net = pylast.LastFMNetwork(api_key=API_KEY, api_secret=API_SECRET)
-
-CLIENT_ID = os.environ["SPOTIFY_CLIENT_ID"]
-CLIENT_SECRET = os.environ["SPOTIFY_CLIENT_SECRET"]
-spotify_api = tk.Spotify(tk.request_client_token(CLIENT_ID, CLIENT_SECRET))
 
 load()
 save()
