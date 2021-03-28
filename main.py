@@ -1,3 +1,5 @@
+import re
+
 import discord
 from discord.ext import commands
 from discord.utils import find
@@ -5,6 +7,25 @@ from discord.utils import find
 from music import *
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
+
+datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
+datafile = os.path.join(datadir, "data.json")
+
+data = {"names": {"132551667085344769": "dam4rusxp"}}
+
+
+def save():
+    global data
+    with open(datafile, "w") as file:
+        file.write(json.dumps(data))
+        file.close()
+
+
+def load():
+    global data
+    if os.path.exists(os.path.join(datadir, "data.json")):
+        with open(datafile, "r") as file:
+            data = json.loads(file.read())
 
 
 @bot.event
