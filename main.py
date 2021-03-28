@@ -4,8 +4,6 @@ from discord.utils import find
 
 from music import *
 
-data = {"names": {"132551667085344769": "dam4rusxp"}}
-
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
 
 

@@ -14,6 +14,8 @@ spotify_api = tk.Spotify(tk.request_client_token(os.environ["SPOTIFY_CLIENT_ID"]
 datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
 datafile = os.path.join(datadir, "data.json")
 
+data = {"names": {"132551667085344769": "dam4rusxp"}}
+
 
 def save():
     global data
