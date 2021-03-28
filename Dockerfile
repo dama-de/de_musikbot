@@ -2,8 +2,8 @@ FROM alpine:3
 
 RUN apk add python3 py3-pip py3-aiohttp
 
-ADD main.py /bot/
-ADD requirements.txt /bot/
+ADD main.py requirements.txt /bot/
+ADD music/ /bot/music/
 
 VOLUME /data
 ENV DATA_DIR=/data
