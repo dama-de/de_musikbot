@@ -75,7 +75,7 @@ async def now(ctx):
         embed.set_thumbnail(url=img_url)
 
     # Try to enhance with Spotify data
-    sp_result = spotify_api.search(" ".join([artist, track, album]))
+    sp_result = await spotify_api.search(" ".join([artist, track, album]))
     if sp_result[0].items:
         sp_url = sp_result[0].items[0].external_urls["spotify"]
         sp_img = sp_result[0].items[0].album.images[0].url
@@ -198,7 +198,7 @@ async def artists(ctx, period="all"):
 
 @bot.command()
 async def track(ctx, *, search_query):
-    result = spotify_api.search(search_query)
+    result = await spotify_api.search(search_query)
     url = result[0].items[0].external_urls["spotify"]
     await ctx.send(url)
 
@@ -206,7 +206,7 @@ async def track(ctx, *, search_query):
 @bot.command()
 async def album(ctx, *, search_query):
     urls = dict()
-    result = spotify_api.search(search_query, types=("album",))
+    result = await spotify_api.search(search_query, types=("album",))
 
     album = result[0].items[0]
     artist = ", ".join([a.name for a in album.artists])
@@ -214,7 +214,7 @@ async def album(ctx, *, search_query):
     image = album.images[0].url
     year = album.release_date[:4]
 
-    album_detail = spotify_api.album(album.id)
+    album_detail = await spotify_api.album(album.id)
 
     full_length_ms = sum([t.duration_ms for t in album_detail.tracks.items])
     minutes = int(full_length_ms / 60_000)
@@ -246,7 +246,7 @@ async def artist(ctx, *, search_query):
     embed.title = artist
     description = "{}\n\nTop Tags: {}".format(bio, ", ".join(top_tags))
 
-    sp_result = spotify_api.search(artist, types=("artist",), limit=1)
+    sp_result = await spotify_api.search(artist, types=("artist",), limit=1)
     if sp_result[0].items:
         # artist_id = sp_result[0].items[0].id
         # artist = sp_result[0].items[0].name
