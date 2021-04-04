@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord.utils import find
 
 from music import *
+from music.search import pack_lastfm_track
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
 
@@ -54,30 +55,26 @@ async def now(ctx):
     lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
 
     # Caching this reduces request count
-    now_playing = lfmuser.get_now_playing()
+    playing = lfmuser.get_now_playing()
+    if not playing:
+        await ctx.reply("Nothing is currently scrobbling on last.fm")
+        return
 
-    artist = now_playing.get_artist().name
-    track = now_playing.get_title(properly_capitalized=False)
-    # tags = now_playing.get_album().get_top_tags()
+    track = pack_lastfm_track(playing)
 
-    embed = discord.Embed(title="{} - {}".format(artist, track))
+    embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name))
     embed.set_author(name=author, icon_url=ctx.author.avatar_url)
     embed.set_footer(text="Now scrobbling on last.fm")
+    embed.url = track.url
 
-    if now_playing.get_album():
-        album = now_playing.get_album().get_title(properly_capitalized=False)
-        img_url = now_playing.get_album().get_cover_image(pylast.SIZE_MEGA)
-    else:
-        album = ""
-        img_url = None
+    if track.album:
+        embed.description = track.album.name
 
-    embed.description = album
-
-    if img_url:
-        embed.set_thumbnail(url=img_url)
+    if track.album.img_url:
+        embed.set_thumbnail(url=track.album.img_url)
 
     # Try to enhance with Spotify data
-    sp_result = await spotify_api.search(" ".join([artist, track, album]))
+    sp_result = await spotify_api.search(" ".join([track.artist.name, track.name, track.album.name]))
     if sp_result[0].items:
         sp_url = sp_result[0].items[0].external_urls["spotify"]
         sp_img = sp_result[0].items[0].album.images[0].url
