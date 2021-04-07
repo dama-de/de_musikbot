@@ -237,7 +237,13 @@ async def album(ctx, *, search_query):
 @bot.command()
 async def artist(ctx, *, search_query):
     urls = dict()
-    last_result = lastfm_net.search_for_artist(search_query).get_next_page()[0]
+
+    # Use exact search if the "query is in quotes" or 'in quotes'
+    quotes = ['"', "'"]
+    if search_query[0] in quotes and search_query[-1] in quotes and search_query[0] == search_query[-1]:
+        last_result = lastfm_net.get_artist(search_query[1:-1])
+    else:
+        last_result = lastfm_net.search_for_artist(search_query).get_next_page()[0]
 
     artist = last_result.get_name(properly_capitalized=True)
     urls["Last.fm"] = last_result.get_url()
