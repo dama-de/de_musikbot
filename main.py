@@ -1,6 +1,7 @@
 import json
 import sys
 import traceback
+from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -31,6 +32,12 @@ def load():
             data = json.loads(file.read())
 
 
+def get_lastfm_user(user: discord.User) -> Optional[str]:
+    if str(user.id) in data["names"]:
+        return data["names"][str(user.id)]
+    return None
+
+
 @bot.event
 async def on_ready():
     print(f"Online. Loaded {len(data['names'])} names.")
@@ -54,7 +61,7 @@ async def now(ctx):
     author = ctx.author.display_name
 
     # Caching this reduces request count
-    track = search.get_scrobble(data["names"][str(ctx.author.id)])
+    track = search.get_scrobble(get_lastfm_user(ctx.author))
     if not track:
         await ctx.reply("Nothing is currently scrobbling on last.fm")
         return
@@ -86,7 +93,7 @@ async def now(ctx):
 
 @last.command()
 async def recent(ctx):
-    lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
+    lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     recent_scrobbles = lfmuser.get_recent_tracks()
 
     embed = discord.Embed(title="Recent scrobbles")
@@ -129,7 +136,7 @@ async def tracks(ctx, period="all"):
     if period not in periods:
         await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
-    lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
+    lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     top_tracks = lfmuser.get_top_tracks(period=periods[period], limit=10)
 
     cols = {
@@ -152,7 +159,7 @@ async def albums(ctx, period="all"):
     if period not in periods:
         await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
-    lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
+    lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     top_albums = lfmuser.get_top_albums(period=periods[period], limit=10)
 
     cols = {
@@ -175,7 +182,7 @@ async def artists(ctx, period="all"):
     if period not in periods:
         await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
-    lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
+    lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     top_artists = lfmuser.get_top_artists(period=periods[period], limit=10)
 
     cols = {
