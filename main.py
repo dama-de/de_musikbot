@@ -32,7 +32,7 @@ def load():
 
 @bot.event
 async def on_ready():
-    print("Online.")
+    print(f"Online. Loaded {len(data['names'])} names.")
 
 
 @bot.group()
