@@ -2,16 +2,20 @@ from music import lastfm_net, spotify_api
 from music.classes import *
 
 
-def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
-    result = lastfm_net.get_track(artist, title)
-
-    if not result:
-        return None
-
+def get_scrobble(username: str) -> Optional[Track]:
+    result = lastfm_net.get_user(username).get_now_playing()
     return pack_lastfm_track(result)
 
 
-def pack_lastfm_track(data: pylast.Track) -> Track:
+def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
+    result = lastfm_net.get_track(artist, title)
+    return pack_lastfm_track(result)
+
+
+def pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
+    if not data:
+        return None
+
     track = Track()
     track.name = data.get_name(properly_capitalized=True)
     track.artist.name = data.get_artist().get_name(properly_capitalized=True)

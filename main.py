@@ -7,7 +7,7 @@ from discord.ext import commands
 from discord.utils import find
 
 from music import *
-from music.search import pack_lastfm_track
+from music import search
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
 
@@ -52,15 +52,12 @@ async def register(ctx: discord.ext.commands.Context, lastfm_name):
 @last.command()
 async def now(ctx):
     author = ctx.author.display_name
-    lfmuser = lastfm_net.get_user(data["names"][str(ctx.author.id)])
 
     # Caching this reduces request count
-    playing = lfmuser.get_now_playing()
-    if not playing:
+    track = search.get_scrobble(data["names"][str(ctx.author.id)])
+    if not track:
         await ctx.reply("Nothing is currently scrobbling on last.fm")
         return
-
-    track = pack_lastfm_track(playing)
 
     embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name))
     embed.set_author(name=author, icon_url=ctx.author.avatar_url)
@@ -80,7 +77,7 @@ async def now(ctx):
         sp_img = sp_result[0].items[0].album.images[0].url
         release_date = sp_result[0].items[0].album.release_date
 
-        embed.description = "{} ({})".format(album, release_date[:4])
+        embed.description = "{} ({})".format(track.album.name, release_date[:4])
         embed.url = sp_url
         embed.set_thumbnail(url=sp_img)
 
