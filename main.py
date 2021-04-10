@@ -267,15 +267,10 @@ async def artist(ctx, *, search_query=""):
     embed.title = artist
     description = "{}\n\nTop Tags: {}".format(bio, ", ".join(top_tags))
 
-    sp_result = await spotify_api.search(artist, types=("artist",), limit=1)
-    if sp_result[0].items:
-        # artist_id = sp_result[0].items[0].id
-        # artist = sp_result[0].items[0].name
-        # genres = ", ".join(sp_result[0].items[0].genres)
-        # popularity = sp_result[0].items[0].popularity
-        urls["Spotify"] = sp_result[0].items[0].external_urls["spotify"]
-        img_url = sp_result[0].items[0].images[0].url
-        embed.set_thumbnail(url=img_url)
+    sp_result = await search.search_spotify_artist(artist)
+    if sp_result:
+        urls["Spotify"] = sp_result.url
+        embed.set_thumbnail(url=sp_result.img_url)
 
     urls["RYM"] = rym_search(artist, searchtype="a")
 

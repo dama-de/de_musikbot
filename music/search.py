@@ -1,4 +1,4 @@
-from tekore._model import SimpleAlbum, FullAlbum
+from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist
 
 from music import lastfm_net, spotify_api
 from music.classes import *
@@ -14,6 +14,20 @@ def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
     return pack_lastfm_track(result)
 
 
+async def search_spotify_artist(query: str, extended=False) -> Optional[Artist]:
+    result = await spotify_api.search(query, types=("artist",), limit=1)
+
+    if result and result[0].items:
+        sp_artist = result[0].items[0]  # type: SimpleArtist
+    else:
+        return None
+
+    if extended:
+        sp_artist = await spotify_api.artist(sp_artist.id)  # type: FullArtist
+
+    return pack_spotify_artist(sp_artist)
+
+
 async def search_spotify_album(query: str, extended=False) -> Optional[Album]:
     result = await spotify_api.search(query, types=("album",), limit=1)
 
@@ -26,6 +40,20 @@ async def search_spotify_album(query: str, extended=False) -> Optional[Album]:
         sp_album = await spotify_api.album(sp_album.id)  # type: FullAlbum
 
     return pack_spotify_album(sp_album)
+
+
+def pack_spotify_artist(data) -> Optional[Artist]:
+    if not isinstance(data, (SimpleArtist, FullArtist)):
+        return None
+
+    result = Artist()
+    result.name = data.name
+    result.tags = ", ".join(data.genres)
+    result.popularity = data.popularity
+    result.url = data.external_urls["spotify"]
+    result.img_url = data.images[0].url
+
+    return result
 
 
 def pack_spotify_album(data) -> Optional[Album]:
