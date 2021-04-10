@@ -1,4 +1,4 @@
-from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist
+from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, SimpleTrack, FullTrack
 
 from music import lastfm_net, spotify_api
 from music.classes import *
@@ -62,6 +62,30 @@ async def search_spotify_album(query: str, extended=False) -> Optional[Album]:
         sp_album = await spotify_api.album(sp_album.id)  # type: FullAlbum
 
     return pack_spotify_album(sp_album)
+
+
+async def search_spotify_track(query: str) -> Optional[Track]:
+    result = await spotify_api.search(query, types=("track",), limit=1)
+
+    if result and result[0].items:
+        sp_track = result[0].items[0]  # type: FullTrack
+    else:
+        return None
+
+    return pack_spotify_track(sp_track)
+
+
+def pack_spotify_track(data) -> Optional[Track]:
+    if not isinstance(data, (FullTrack,)):
+        return None
+
+    result = Track()
+    result.name = data.name
+    result.url = data.external_urls["spotify"]
+    result.album.img_url = data.album.images[0].url
+    result.album.date = data.album.release_date
+
+    return result
 
 
 def pack_spotify_artist(data) -> Optional[Artist]:

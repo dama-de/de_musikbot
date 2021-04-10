@@ -79,15 +79,11 @@ async def now(ctx):
         embed.set_thumbnail(url=track.album.img_url)
 
     # Try to enhance with Spotify data
-    sp_result = await spotify_api.search(" ".join([track.artist.name, track.name, track.album.name]))
-    if sp_result[0].items:
-        sp_url = sp_result[0].items[0].external_urls["spotify"]
-        sp_img = sp_result[0].items[0].album.images[0].url
-        release_date = sp_result[0].items[0].album.release_date
-
-        embed.description = "{} ({})".format(track.album.name, release_date[:4])
-        embed.url = sp_url
-        embed.set_thumbnail(url=sp_img)
+    sp_result = await search.search_spotify_track(" ".join([track.artist.name, track.name, track.album.name]))
+    if sp_result:
+        embed.url = sp_result.url
+        embed.set_thumbnail(url=sp_result.album.img_url)
+        embed.description = "{} ({})".format(track.album.name, sp_result.album.date[:4])
 
     await ctx.send(embed=embed)
 
@@ -202,8 +198,8 @@ async def artists(ctx, period="all"):
 
 @bot.command()
 async def track(ctx, *, search_query):
-    result = await spotify_api.search(search_query)
-    url = result[0].items[0].external_urls["spotify"]
+    result = await search.search_spotify_track(search_query)
+    url = result.url
     await ctx.send(url)
 
 
