@@ -242,7 +242,7 @@ async def artist(ctx, *, search_query=""):
     if not search_query and get_lastfm_user(ctx.author):
         scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
         if scrobble:
-            search_query = scrobble.artist.name
+            search_query = f"'{scrobble.artist.name}'"
 
     if not search_query:
         raise MissingRequiredArgument(ctx.command.params["search_query"])
