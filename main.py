@@ -5,6 +5,7 @@ from typing import Optional
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import MissingRequiredArgument
 from discord.utils import find
 
 from music import *
@@ -207,8 +208,17 @@ async def track(ctx, *, search_query):
 
 
 @bot.command()
-async def album(ctx, *, search_query):
+async def album(ctx, *, search_query=""):
     urls = dict()
+
+    if not search_query and get_lastfm_user(ctx.author):
+        scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
+        if scrobble and scrobble.album:
+            search_query = f"{scrobble.artist.name} {scrobble.album.name}"
+
+    if not search_query:
+        raise MissingRequiredArgument(ctx.command.params["search_query"])
+
     result = await spotify_api.search(search_query, types=("album",))
 
     album = result[0].items[0]
@@ -236,8 +246,16 @@ async def album(ctx, *, search_query):
 
 
 @bot.command()
-async def artist(ctx, *, search_query):
+async def artist(ctx, *, search_query=""):
     urls = dict()
+
+    if not search_query and get_lastfm_user(ctx.author):
+        scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
+        if scrobble:
+            search_query = scrobble.artist.name
+
+    if not search_query:
+        raise MissingRequiredArgument(ctx.command.params["search_query"])
 
     # Use exact search if the "query is in quotes" or 'in quotes'
     quotes = ['"', "'"]
