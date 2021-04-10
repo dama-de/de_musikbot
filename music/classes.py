@@ -35,7 +35,7 @@ class Track(NamedBase):
 
 
 class Album(NamedBase):
-    __slots__ = ("_artist", "date", "tracks", "url", "img_url", "popularity", "spotify_id")
+    __slots__ = ("_artist", "date", "tracks", "length", "url", "img_url", "popularity", "spotify_id")
 
     def __init__(self):
         self._artist = Artist()

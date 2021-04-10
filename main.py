@@ -219,28 +219,22 @@ async def album(ctx, *, search_query=""):
     if not search_query:
         raise MissingRequiredArgument(ctx.command.params["search_query"])
 
-    result = await spotify_api.search(search_query, types=("album",))
+    result = await search.search_spotify_album(search_query, extended=True)
 
-    album = result[0].items[0]
-    artist = ", ".join([a.name for a in album.artists])
-    urls["Spotify"] = album.external_urls["spotify"]
-    image = album.images[0].url
-    year = album.release_date[:4]
+    if not result:
+        return
 
-    album_detail = await spotify_api.album(album.id)
+    urls["Spotify"] = result.url
+    year = result.date[:4]
+    minutes = int(result.length / 60_000)
 
-    full_length_ms = sum([t.duration_ms for t in album_detail.tracks.items])
-    minutes = int(full_length_ms / 60_000)
-    length = "{} min".format(minutes)
+    urls["RYM"] = rym_search(result.name, searchtype="l")
 
-    urls["RYM"] = rym_search(album.name, searchtype="l")
+    metrics = "{} • {} songs, {} min".format(year, result.tracks, minutes)
+    description = f"*{result.artist.name}*\n{metrics}\n\n{mklinks(urls)}"
 
-    description = f"{artist}\n\n{mklinks(urls)}"
-    footer = "{} • {} songs, {}".format(year, album.total_tracks, length)
-
-    embed = discord.Embed(title=album.name, description=description, url=urls["Spotify"])
-    embed.set_footer(text=footer)
-    embed.set_thumbnail(url=image)
+    embed = discord.Embed(title=result.name, description=description, url=urls["Spotify"])
+    embed.set_thumbnail(url=result.img_url)
 
     await ctx.send(embed=embed)
 
