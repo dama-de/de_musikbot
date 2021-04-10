@@ -31,7 +31,7 @@ def pack_lastfm_artist(data: pylast.Artist) -> Optional[Artist]:
     result.name = data.get_name(properly_capitalized=True)
     result.bio = data.get_bio("summary").split("<a href")[0]
     result.url = data.get_url()
-    result.tags = [t.item.name for t in data.get_top_tags(limit=6) if int(t.weight) >= 10]
+    result.tags = ", ".join([t.item.name for t in data.get_top_tags(limit=6) if int(t.weight) >= 10])
 
     return result
 
