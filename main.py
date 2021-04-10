@@ -254,25 +254,21 @@ async def artist(ctx, *, search_query=""):
     # Use exact search if the "query is in quotes" or 'in quotes'
     quotes = ['"', "'"]
     if search_query[0] in quotes and search_query[-1] in quotes and search_query[0] == search_query[-1]:
-        last_result = lastfm_net.get_artist(search_query[1:-1])
+        last_result = search.search_lastfm_artist(search_query[1:-1], exact=True)
     else:
-        last_result = lastfm_net.search_for_artist(search_query).get_next_page()[0]
-
-    artist = last_result.get_name(properly_capitalized=True)
-    urls["Last.fm"] = last_result.get_url()
-    bio = last_result.get_bio("summary").split("<a href")[0]
-    top_tags = [t.item.name for t in last_result.get_top_tags(limit=6) if int(t.weight) >= 10]
+        last_result = search.search_lastfm_artist(search_query)
 
     embed = discord.Embed()
-    embed.title = artist
-    description = "{}\n\nTop Tags: {}".format(bio, ", ".join(top_tags))
+    embed.title = last_result.name
+    description = "{}\n\nTop Tags: {}".format(last_result.bio, last_result.tags)
 
-    sp_result = await search.search_spotify_artist(artist)
+    sp_result = await search.search_spotify_artist(last_result.name)
     if sp_result:
         urls["Spotify"] = sp_result.url
         embed.set_thumbnail(url=sp_result.img_url)
 
-    urls["RYM"] = rym_search(artist, searchtype="a")
+    urls["Last.fm"] = last_result.url
+    urls["RYM"] = rym_search(last_result.name, searchtype="a")
 
     description += f"\n\n{mklinks(urls)}"
     chosenkey = find(lambda key: key in urls, ["Spotify", "Last.fm", "RYM"])

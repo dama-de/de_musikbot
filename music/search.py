@@ -14,6 +14,28 @@ def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
     return pack_lastfm_track(result)
 
 
+def search_lastfm_artist(artist: str, exact=False) -> Optional[Artist]:
+    if exact:
+        result = lastfm_net.get_artist(artist)
+    else:
+        result = lastfm_net.search_for_artist(artist).get_next_page()[0]
+
+    return pack_lastfm_artist(result)
+
+
+def pack_lastfm_artist(data: pylast.Artist) -> Optional[Artist]:
+    if not isinstance(data, pylast.Artist):
+        return None
+
+    result = Artist()
+    result.name = data.get_name(properly_capitalized=True)
+    result.bio = data.get_bio("summary").split("<a href")[0]
+    result.url = data.get_url()
+    result.tags = [t.item.name for t in data.get_top_tags(limit=6) if int(t.weight) >= 10]
+
+    return result
+
+
 async def search_spotify_artist(query: str, extended=False) -> Optional[Artist]:
     result = await spotify_api.search(query, types=("artist",), limit=1)
 

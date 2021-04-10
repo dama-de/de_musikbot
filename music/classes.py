@@ -15,7 +15,7 @@ class NamedBase:
 
 
 class Artist(NamedBase):
-    __slots__ = ("url", "img_url", "tags", "popularity", "spotify_id")
+    __slots__ = ("bio", "url", "img_url", "tags", "popularity", "spotify_id")
 
 
 class Track(NamedBase):
