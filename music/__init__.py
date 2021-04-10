@@ -13,8 +13,11 @@ spotify_api = tk.Spotify(
     asynchronous=True)
 
 
-def rym_search(query):
-    return "https://rateyourmusic.com/search?searchterm={}".format(quote_plus(query))
+def rym_search(query, searchtype=None):
+    if searchtype:
+        return f"https://rateyourmusic.com/search?searchterm={quote_plus(query)}&searchtype={searchtype}"
+    else:
+        return f"https://rateyourmusic.com/search?searchterm={quote_plus(query)}"
 
 
 def mklinks(urls: dict) -> str:

@@ -222,7 +222,7 @@ async def album(ctx, *, search_query):
     minutes = int(full_length_ms / 60_000)
     length = "{} min".format(minutes)
 
-    urls["RYM"] = rym_search(album.name)
+    urls["RYM"] = rym_search(album.name, searchtype="l")
 
     description = f"{artist}\n\n{mklinks(urls)}"
     footer = "{} • {} songs, {}".format(year, album.total_tracks, length)
@@ -264,7 +264,7 @@ async def artist(ctx, *, search_query):
         img_url = sp_result[0].items[0].images[0].url
         embed.set_thumbnail(url=img_url)
 
-    urls["RYM"] = rym_search(artist)
+    urls["RYM"] = rym_search(artist, searchtype="a")
 
     description += f"\n\n{mklinks(urls)}"
     chosenkey = find(lambda key: key in urls, ["Spotify", "Last.fm", "RYM"])
