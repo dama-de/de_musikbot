@@ -46,12 +46,14 @@ async def on_ready():
 
 @bot.group()
 async def last(ctx):
+    """last.fm command category"""
     if not ctx.invoked_subcommand:
         await ctx.send("Try `{}help`".format(ctx.prefix))
 
 
 @last.command()
 async def register(ctx: discord.ext.commands.Context, lastfm_name):
+    """Register your last.fm account with this bot."""
     data["names"][str(ctx.author.id)] = lastfm_name
     await ctx.message.add_reaction(u'\U00002611')
     save()
@@ -59,6 +61,7 @@ async def register(ctx: discord.ext.commands.Context, lastfm_name):
 
 @last.command()
 async def now(ctx):
+    """Fetch the currently playing song from your last.fm."""
     author = ctx.author.display_name
 
     # Caching this reduces request count
@@ -90,6 +93,7 @@ async def now(ctx):
 
 @last.command()
 async def recent(ctx):
+    """Fetch the last scrobbles from your last.fm."""
     lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     recent_scrobbles = lfmuser.get_recent_tracks()
 
@@ -130,6 +134,8 @@ def make_table(format_string, cols: dict):
 
 @last.command()
 async def tracks(ctx, period="all"):
+    """Fetch your most played tracks.
+    Time periods: all, 7d, 1m, 3m, 6m, 12m"""
     if period not in periods:
         await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
@@ -153,6 +159,8 @@ async def tracks(ctx, period="all"):
 
 @last.command()
 async def albums(ctx, period="all"):
+    """Fetch your most played albums.
+    Time periods: all, 7d, 1m, 3m, 6m, 12m"""
     if period not in periods:
         await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
@@ -176,6 +184,8 @@ async def albums(ctx, period="all"):
 
 @last.command()
 async def artists(ctx, period="all"):
+    """Fetch your most played artists.
+    Time periods: all, 7d, 1m, 3m, 6m, 12m"""
     if period not in periods:
         await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
@@ -198,6 +208,7 @@ async def artists(ctx, period="all"):
 
 @bot.command()
 async def track(ctx, *, search_query):
+    """Search for a single track"""
     result = await search.search_spotify_track(search_query)
     url = result.url
     await ctx.send(url)
@@ -205,6 +216,7 @@ async def track(ctx, *, search_query):
 
 @bot.command()
 async def album(ctx, *, search_query=""):
+    """Search for an album"""
     urls = dict()
 
     if not search_query and get_lastfm_user(ctx.author):
@@ -237,6 +249,7 @@ async def album(ctx, *, search_query=""):
 
 @bot.command()
 async def artist(ctx, *, search_query=""):
+    """Search for an artist"""
     urls = dict()
 
     if not search_query and get_lastfm_user(ctx.author):
