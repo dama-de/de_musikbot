@@ -341,6 +341,7 @@ async def _register(ctx, lastfm_name):
 
 @slash.subcommand(base="last", name="now", description="Fetch the currently playing song", guild_ids=slash_guilds)
 async def _now(ctx):
+    ctx.reply = ctx.send
     await now(ctx)
 
 
