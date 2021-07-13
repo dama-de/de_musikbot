@@ -7,14 +7,19 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import MissingRequiredArgument
 from discord.utils import find
+from discord_slash import SlashCommand, SlashCommandOptionType
+from discord_slash.utils.manage_commands import create_option
 
 from music import *
 from music import search
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
+slash = SlashCommand(bot, sync_commands=True)
 
 datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
 datafile = os.path.join(datadir, "data.json")
+
+slash_guilds = None
 
 data = {"names": {"132551667085344769": "dam4rusxp"}}
 
@@ -44,6 +49,14 @@ async def on_ready():
     print(f"Online. Loaded {len(data['names'])} names.")
 
 
+@bot.event
+async def on_command_error(ctx, error):
+    traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Missing argument '" + error.param.name + "'")
+
+
+# ---------- Regular commands ----------
 @bot.group()
 async def last(ctx):
     """last.fm command category"""
@@ -61,7 +74,7 @@ async def register(ctx: discord.ext.commands.Context, lastfm_name):
 
 @last.command()
 async def now(ctx):
-    """Fetch the currently playing song from your last.fm."""
+    """Fetch the currently playing song."""
     author = ctx.author.display_name
 
     # Caching this reduces request count
@@ -93,7 +106,7 @@ async def now(ctx):
 
 @last.command()
 async def recent(ctx):
-    """Fetch the last scrobbles from your last.fm."""
+    """Fetch your last scrobbles."""
     lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     recent_scrobbles = lfmuser.get_recent_tracks()
 
@@ -287,11 +300,75 @@ async def artist(ctx, *, search_query=""):
     await ctx.send(embed=embed)
 
 
-@bot.event
-async def on_command_error(ctx, error):
-    traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-    if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Missing argument '" + error.param.name + "'")
+# ---------- Slash Commands ----------
+@slash.slash(name="album", description="Search for an album", guild_ids=slash_guilds,
+             options=[create_option(
+                 name="search_query", description="name of the album", required=False,
+                 option_type=SlashCommandOptionType.STRING)])
+async def _album(ctx, search_query=""):
+    await album(ctx, search_query=search_query)
+
+
+@slash.slash(name="artist", description="Search for an artist", guild_ids=slash_guilds,
+             options=[create_option(
+                 name="search_query", description="name of the artist", required=False,
+                 option_type=SlashCommandOptionType.STRING)])
+async def _artist(ctx, search_query=""):
+    await artist(ctx, search_query=search_query)
+
+
+@slash.slash(name="track", description="Search for a track", guild_ids=slash_guilds,
+             options=[create_option(
+                 name="search_query", description="name of the track", required=False,
+                 option_type=SlashCommandOptionType.STRING)])
+async def _track(ctx, search_query=""):
+    await track(ctx, search_query=search_query)
+
+
+@slash.slash(name="last", guild_ids=slash_guilds)
+async def _last(ctx):
+    pass
+
+
+@slash.subcommand(base="last", name="register", description="Register your last.fm account with the bot",
+                  guild_ids=slash_guilds,
+                  options=[create_option(
+                      name="lastfm_name", description="Your last.fm username", required=True,
+                      option_type=SlashCommandOptionType.STRING)])
+async def _register(ctx, lastfm_name):
+    await register(ctx, lastfm_name)
+
+
+@slash.subcommand(base="last", name="now", description="Fetch the currently playing song", guild_ids=slash_guilds)
+async def _now(ctx):
+    await now(ctx)
+
+
+@slash.subcommand(base="last", name="artists", description="Fetch your most played artists", guild_ids=slash_guilds,
+                  options=[create_option(
+                      name="period", description="Time period", required=False,
+                      option_type=SlashCommandOptionType.STRING,
+                      choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+async def _artists(ctx, period="all"):
+    await artists(ctx, period)
+
+
+@slash.subcommand(base="last", name="albums", description="Fetch your most played albums", guild_ids=slash_guilds,
+                  options=[create_option(
+                      name="period", description="Time period", required=False,
+                      option_type=SlashCommandOptionType.STRING,
+                      choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+async def _albums(ctx, period="all"):
+    await albums(ctx, period)
+
+
+@slash.subcommand(base="last", name="tracks", description="Fetch your most played tracks", guild_ids=slash_guilds,
+                  options=[create_option(
+                      name="period", description="Time period", required=False,
+                      option_type=SlashCommandOptionType.STRING,
+                      choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+async def _tracks(ctx, period="all"):
+    await tracks(ctx, period)
 
 
 load()

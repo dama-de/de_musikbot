@@ -2,3 +2,4 @@ discord.py
 pylast
 tekore
 python-dotenv
+discord-py-slash-command
