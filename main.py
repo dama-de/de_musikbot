@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import MissingRequiredArgument
 from discord.utils import find
-from discord_slash import SlashCommand, SlashCommandOptionType
+from discord_slash import SlashCommand, SlashCommandOptionType, SlashContext
 from discord_slash.utils.manage_commands import create_option
 
 from music import *
@@ -68,8 +68,11 @@ async def last(ctx):
 async def register(ctx: discord.ext.commands.Context, lastfm_name):
     """Register your last.fm account with this bot."""
     data["names"][str(ctx.author.id)] = lastfm_name
-    await ctx.message.add_reaction(u'\U00002611')
     save()
+    if isinstance(ctx, SlashContext):
+        await ctx.send("Done.", hidden=True)
+    else:
+        await ctx.message.add_reaction(u'\U00002611')
 
 
 @last.command()
@@ -80,7 +83,10 @@ async def now(ctx):
     # Caching this reduces request count
     track = search.get_scrobble(get_lastfm_user(ctx.author))
     if not track:
-        await ctx.reply("Nothing is currently scrobbling on last.fm")
+        if isinstance(ctx, SlashContext):
+            await ctx.send("Nothing is currently scrobbling on last.fm", hidden=True)
+        else:
+            await ctx.reply("Nothing is currently scrobbling on last.fm")
         return
 
     embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name))
@@ -341,7 +347,6 @@ async def _register(ctx, lastfm_name):
 
 @slash.subcommand(base="last", name="now", description="Fetch the currently playing song", guild_ids=slash_guilds)
 async def _now(ctx):
-    ctx.reply = ctx.send
     await now(ctx)
 
 
