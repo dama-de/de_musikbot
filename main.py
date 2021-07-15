@@ -19,6 +19,8 @@ slash = SlashCommand(bot, sync_commands=True)
 datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
 datafile = os.path.join(datadir, "data.json")
 
+# Set your server id here to update slash commands without delay while debugging
+# slash_guilds = [822951335191904267]
 slash_guilds = None
 
 data = {"names": {"132551667085344769": "dam4rusxp"}}
@@ -126,6 +128,7 @@ async def recent(ctx):
     await ctx.send(embed=embed)
 
 
+# Constants for markdown table generation
 periods = {"all": pylast.PERIOD_OVERALL,
            "7d": pylast.PERIOD_7DAYS,
            "1m": pylast.PERIOD_1MONTH,
