@@ -350,6 +350,11 @@ async def _now(ctx):
     await now(ctx)
 
 
+@slash.subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles", guild_ids=slash_guilds)
+async def _recent(ctx):
+    await recent(ctx)
+
+
 @slash.subcommand(base="last", name="artists", description="Fetch your most played artists", guild_ids=slash_guilds,
                   options=[create_option(
                       name="period", description="Time period", required=False,
