@@ -5,5 +5,5 @@ Ein Bot mit Musikfunktionen.
 - [Show existing Last.fm API accounts](https://www.last.fm/api/accounts)
 - [Manage Spotify API accounts](https://developer.spotify.com/dashboard/applications)
 
-1. Create a new .env file from the sample.env template
-1. Run `sudo docker-compose up -d --build`
+1. Create a new file `.env` from the sample.env template
+1. Run `sudo docker-compose up --build`
