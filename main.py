@@ -27,7 +27,7 @@ datafile = os.path.join(datadir, "data.json")
 
 # Set your server id here to update slash commands without delay while debugging
 # slash_guilds = [822951335191904267]
-slash_guilds = [704759595679088690]
+slash_guilds = None
 
 data = {"names": {"132551667085344769": "dam4rusxp"}}
 
@@ -391,9 +391,7 @@ async def _tracks(ctx, period="all"):
     await tracks(ctx, period)
 
 
-# slash command for lyrics (genius)
-
-@slash.slash(name="lyricsGenius", guild_ids=slash_guilds)
+@slash.slash(name="lyricsGenius", description="Gets the Genius link for the song you're currently listening to", guild_ids=slash_guilds)
 async def _lyrics(ctx):
     track = search.get_scrobble(get_lastfm_user(ctx.author))
     song = genius.search_song(title=str(track), artist=str(track.artist.name))
