@@ -15,7 +15,6 @@ from lyricsgenius.genius import Genius
 from music import *
 from music import search
 
-# import lyricsgenius (https://lyricsgenius.readthedocs.io/en/master/index.html#)
 import lyricsgenius
 genius = lyricsgenius.Genius(os.environ["GENIUS_CLIENT_SECRET"])
 
