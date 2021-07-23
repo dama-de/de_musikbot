@@ -4,14 +4,20 @@ import traceback
 from typing import Optional
 
 import discord
+from discord import embeds
 from discord.ext import commands
 from discord.ext.commands import MissingRequiredArgument
 from discord.utils import find
 from discord_slash import SlashCommand, SlashCommandOptionType, SlashContext
 from discord_slash.utils.manage_commands import create_option
+from lyricsgenius.genius import Genius
 
 from music import *
 from music import search
+
+# import lyricsgenius (https://lyricsgenius.readthedocs.io/en/master/index.html#)
+import lyricsgenius
+genius = lyricsgenius.Genius(os.environ["GENIUS_CLIENT_SECRET"])
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
 slash = SlashCommand(bot, sync_commands=True)
@@ -21,7 +27,7 @@ datafile = os.path.join(datadir, "data.json")
 
 # Set your server id here to update slash commands without delay while debugging
 # slash_guilds = [822951335191904267]
-slash_guilds = None
+slash_guilds = [704759595679088690]
 
 data = {"names": {"132551667085344769": "dam4rusxp"}}
 
@@ -385,7 +391,20 @@ async def _tracks(ctx, period="all"):
     await tracks(ctx, period)
 
 
+# slash command for lyrics (genius)
+
+@slash.slash(name="lyricsGenius", guild_ids=slash_guilds)
+async def _lyrics(ctx):
+    track = search.get_scrobble(get_lastfm_user(ctx.author))
+    song = genius.search_song(title=str(track), artist=str(track.artist.name))
+    lyrics = str(song.url)
+    embed = discord.Embed(title='Genius Lyrics')
+    embed.add_field(name='Link', value=str(song.url))
+    embed.set_thumbnail(url=track.album.img_url)
+    await ctx.send(embed=embed)
+
 load()
 save()
 
 bot.run(os.environ["DISCORD_TOKEN"])
+
