@@ -4,18 +4,17 @@ import traceback
 from typing import Optional
 
 import discord
-from discord import embeds
 from discord.ext import commands
 from discord.ext.commands import MissingRequiredArgument
 from discord.utils import find
 from discord_slash import SlashCommand, SlashCommandOptionType, SlashContext
 from discord_slash.utils.manage_commands import create_option
-from lyricsgenius.genius import Genius
 
 from music import *
 from music import search
 
 import lyricsgenius
+
 genius = lyricsgenius.Genius(os.environ["GENIUS_CLIENT_SECRET"])
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
