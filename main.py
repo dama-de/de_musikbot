@@ -17,7 +17,7 @@ from music import search
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)-5s | %(asctime)s | %(name)-18s | %(message)s")
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
-slash = SlashCommand(bot, sync_commands=True)
+slash = SlashCommand(bot, sync_commands=True, delete_from_unused_guilds=True)
 
 datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
 datafile = os.path.join(datadir, "data.json")
