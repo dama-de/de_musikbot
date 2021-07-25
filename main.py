@@ -13,10 +13,6 @@ from discord_slash.utils.manage_commands import create_option
 from music import *
 from music import search
 
-import lyricsgenius
-
-genius = lyricsgenius.Genius(os.environ["GENIUS_CLIENT_SECRET"])
-
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
 slash = SlashCommand(bot, sync_commands=True)
 
@@ -389,18 +385,18 @@ async def _tracks(ctx, period="all"):
     await tracks(ctx, period)
 
 
-@slash.slash(name="lyricsGenius", description="Gets the Genius link for the song you're currently listening to", guild_ids=slash_guilds)
+@slash.slash(name="lyricsGenius", description="Gets the Genius link for the song you're currently listening to",
+             guild_ids=slash_guilds)
 async def _lyrics(ctx):
     track = search.get_scrobble(get_lastfm_user(ctx.author))
     song = genius.search_song(title=str(track), artist=str(track.artist.name))
-    lyrics = str(song.url)
     embed = discord.Embed(title='Genius Lyrics')
     embed.add_field(name='Link', value=str(song.url))
     embed.set_thumbnail(url=track.album.img_url)
     await ctx.send(embed=embed)
 
+
 load()
 save()
 
 bot.run(os.environ["DISCORD_TOKEN"])
-
