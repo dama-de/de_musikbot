@@ -14,7 +14,8 @@ from discord_slash.utils.manage_commands import create_option
 from music import *
 from music import search
 
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)-5s | %(asctime)s | %(name)-18s | %(message)s")
+_loglevel = os.environ["LOG_LEVEL"] if "LOG_LEVEL" in os.environ else "INFO"
+logging.basicConfig(level=_loglevel, format="%(levelname)-5s | %(asctime)s | %(name)-18s | %(message)s")
 
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
 slash = SlashCommand(bot, sync_commands=True, delete_from_unused_guilds=True)
