@@ -50,6 +50,14 @@ def get_lastfm_user(user: discord.User) -> Optional[str]:
     return None
 
 
+async def reply_on_error(ctx, message: str):
+    if isinstance(ctx, SlashContext):
+        await ctx.send(message, hidden=True)
+    else:
+        await ctx.reply(message)
+    return
+
+
 @bot.event
 async def on_ready():
     print(f"Online. Loaded {len(data['names'])} names.")
@@ -89,10 +97,7 @@ async def now(ctx):
     # Caching this reduces request count
     track = search.get_scrobble(get_lastfm_user(ctx.author))
     if not track:
-        if isinstance(ctx, SlashContext):
-            await ctx.send("Nothing is currently scrobbling on last.fm", hidden=True)
-        else:
-            await ctx.reply("Nothing is currently scrobbling on last.fm")
+        await reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
         return
 
     embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name))
@@ -163,7 +168,7 @@ async def tracks(ctx, period="all"):
     """Fetch your most played tracks.
     Time periods: all, 7d, 1m, 3m, 6m, 12m"""
     if period not in periods:
-        await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+        await reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
     lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     top_tracks = lfmuser.get_top_tracks(period=periods[period], limit=10)
@@ -188,7 +193,7 @@ async def albums(ctx, period="all"):
     """Fetch your most played albums.
     Time periods: all, 7d, 1m, 3m, 6m, 12m"""
     if period not in periods:
-        await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+        await reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
     lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     top_albums = lfmuser.get_top_albums(period=periods[period], limit=10)
@@ -213,7 +218,7 @@ async def artists(ctx, period="all"):
     """Fetch your most played artists.
     Time periods: all, 7d, 1m, 3m, 6m, 12m"""
     if period not in periods:
-        await ctx.send("Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+        await reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
 
     lfmuser = lastfm_net.get_user(get_lastfm_user(ctx.author))
     top_artists = lfmuser.get_top_artists(period=periods[period], limit=10)
@@ -406,11 +411,19 @@ async def _tracks(ctx, period="all"):
 @slash.slash(name="lyricsGenius", description="Gets the Genius link for the song you're currently listening to",
              guild_ids=slash_guilds)
 async def _lyrics(ctx):
-    track = search.get_scrobble(get_lastfm_user(ctx.author))
-    song = genius.search_song(title=str(track), artist=str(track.artist.name))
+    scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
+
+    if not scrobble:
+        await reply_on_error(ctx, "Nothing is currently scrobbling.")
+
+    song = genius.search_song(title=str(scrobble), artist=str(scrobble.artist.name))
+
+    if not song:
+        await reply_on_error(ctx, f"Could not find '{scrobble.artist.name} - {scrobble.name}' on Genius.")
+
     embed = discord.Embed(title='Genius Lyrics')
     embed.add_field(name='Link', value=str(song.url))
-    embed.set_thumbnail(url=track.album.img_url)
+    embed.set_thumbnail(url=scrobble.album.img_url)
     await ctx.send(embed=embed)
 
 
