@@ -20,7 +20,7 @@ logging.basicConfig(level=_loglevel, format="%(levelname)-5s | %(asctime)s | %(n
 bot = commands.Bot(command_prefix=os.environ["PREFIX"])
 slash = SlashCommand(bot, sync_commands=True, delete_from_unused_guilds=True)
 
-datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else ""
+datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else "./data/"
 datafile = os.path.join(datadir, "data.json")
 
 # Set your server id here to update slash commands without delay while debugging
