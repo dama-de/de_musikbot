@@ -244,30 +244,44 @@ async def album(ctx, *, search_query=""):
     """Search for an album"""
     urls = dict()
 
+    last_album = None
     if not search_query and get_lastfm_user(ctx.author):
         scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
         if scrobble and scrobble.album:
+            last_album = scrobble.album
             search_query = f"{scrobble.artist.name} {scrobble.album.name}"
 
     if not search_query:
         raise MissingRequiredArgument(ctx.command.params["search_query"])
 
-    result = await search.search_spotify_album(search_query, extended=True)
+    if not last_album:
+        last_album = search.search_lastfm_album(search_query)
 
-    if not result:
-        return
+    spotify_album = await search.search_spotify_album(search_query, extended=True)
 
-    urls["Spotify"] = result.url
-    year = result.date[:4]
-    minutes = int(result.length / 60_000)
+    if not spotify_album:
+        name = last_album.name
+        artist_name = last_album.artist.name
+        img_url = last_album.img_url
+        url = last_album.url
+        metrics = ""
+    else:
+        name = spotify_album.name
+        artist_name = spotify_album.artist.name
+        img_url = spotify_album.img_url
+        url = spotify_album.url
+        urls["Spotify"] = url
+        year = spotify_album.date[:4]
+        minutes = int(spotify_album.length / 60_000)
+        metrics = f"\n{year} • {spotify_album.tracks} songs, {minutes} min"
 
-    urls["RYM"] = rym_search(result.name, searchtype="l")
+    urls["RYM"] = rym_search(name, searchtype="l")
+    urls["Last.fm"] = last_album.url
 
-    metrics = "{} • {} songs, {} min".format(year, result.tracks, minutes)
-    description = f"*{result.artist.name}*\n{metrics}\n\n{mklinks(urls)}"
+    description = f"*{artist_name}*{metrics}\n\n{mklinks(urls)}"
 
-    embed = discord.Embed(title=result.name, description=description, url=urls["Spotify"])
-    embed.set_thumbnail(url=result.img_url)
+    embed = discord.Embed(title=name, description=description, url=url)
+    embed.set_thumbnail(url=img_url)
 
     await ctx.send(embed=embed)
 

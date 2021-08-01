@@ -9,6 +9,11 @@ def get_scrobble(username: str) -> Optional[Track]:
     return pack_lastfm_track(result)
 
 
+def search_lastfm_album(search: str) -> Optional[Album]:
+    result = lastfm_net.search_for_album(search).get_next_page()[0]
+    return pack_lastfm_album(result)
+
+
 def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
     result = lastfm_net.get_track(artist, title)
     return pack_lastfm_track(result)
@@ -130,8 +135,19 @@ def pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
     track.url = data.get_url()
 
     if data.get_album():
-        track.album.name = data.get_album().get_name()
-        track.album.artist.name = data.get_album().artist.name
-        track.album.img_url = data.get_album().get_cover_image(pylast.SIZE_MEGA)
+        track._album = pack_lastfm_album(data.get_album())
 
     return track
+
+
+def pack_lastfm_album(data: pylast.Album) -> Optional[Album]:
+    if not data:
+        return None
+
+    album = Album()
+    album.name = data.get_name(properly_capitalized=True)
+    album.artist.name = data.get_artist().get_name(properly_capitalized=True)
+    album.url = data.get_url()
+    album.img_url = data.get_cover_image()
+
+    return album
