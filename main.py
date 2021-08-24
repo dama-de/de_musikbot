@@ -372,12 +372,14 @@ async def _register(ctx, lastfm_name):
 
 
 @slash.subcommand(base="last", name="now", description="Fetch the currently playing song", guild_ids=slash_guilds)
-async def _now(ctx):
+async def _now(ctx: SlashContext):
+    await ctx.defer()
     await now(ctx)
 
 
 @slash.subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles", guild_ids=slash_guilds)
 async def _recent(ctx):
+    await ctx.defer()
     await recent(ctx)
 
 
@@ -387,6 +389,7 @@ async def _recent(ctx):
                       option_type=SlashCommandOptionType.STRING,
                       choices=["all", "7d", "1m", "3m", "6m", "12m"])])
 async def _artists(ctx, period="all"):
+    await ctx.defer()
     await artists(ctx, period)
 
 
@@ -396,6 +399,7 @@ async def _artists(ctx, period="all"):
                       option_type=SlashCommandOptionType.STRING,
                       choices=["all", "7d", "1m", "3m", "6m", "12m"])])
 async def _albums(ctx, period="all"):
+    await ctx.defer()
     await albums(ctx, period)
 
 
@@ -405,12 +409,14 @@ async def _albums(ctx, period="all"):
                       option_type=SlashCommandOptionType.STRING,
                       choices=["all", "7d", "1m", "3m", "6m", "12m"])])
 async def _tracks(ctx, period="all"):
+    await ctx.defer()
     await tracks(ctx, period)
 
 
 @slash.slash(name="lyricsGenius", description="Gets the Genius link for the song you're currently listening to",
              guild_ids=slash_guilds)
 async def _lyrics(ctx):
+    await ctx.defer()
     scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
 
     if not scrobble:
