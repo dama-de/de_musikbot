@@ -1,6 +1,6 @@
-discord.py
-pylast
-tekore
-python-dotenv
-discord-py-slash-command
-lyricsgenius
+discord.py == 1.7.3
+pylast == 4.2.1
+tekore == 3.7.1
+python-dotenv == 0.19
+discord-py-interactions == 3.0.2
+lyricsgenius == 3.0.1
