@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import sys
@@ -13,6 +14,7 @@ from discord_slash.utils.manage_commands import create_option
 
 from music import *
 from music import search
+from util import auto_defer
 
 _loglevel = os.environ["LOG_LEVEL"] if "LOG_LEVEL" in os.environ else "INFO"
 logging.basicConfig(level=_loglevel, format="%(levelname)-5s | %(asctime)s | %(name)-18s | %(message)s")
@@ -95,7 +97,7 @@ async def now(ctx):
     author = ctx.author.display_name
 
     # Caching this reduces request count
-    track = search.get_scrobble(get_lastfm_user(ctx.author))
+    track = await search.get_scrobble(get_lastfm_user(ctx.author))
     if not track:
         await reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
         return
@@ -252,7 +254,7 @@ async def album(ctx, *, search_query=""):
 
     last_album = None
     if not search_query and get_lastfm_user(ctx.author):
-        scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
+        scrobble = await search.get_scrobble(get_lastfm_user(ctx.author))
         if scrobble and scrobble.album:
             last_album = scrobble.album
             search_query = f"{scrobble.artist.name} {scrobble.album.name}"
@@ -261,7 +263,7 @@ async def album(ctx, *, search_query=""):
         raise MissingRequiredArgument(ctx.command.params["search_query"])
 
     if not last_album:
-        last_album = search.search_lastfm_album(search_query)
+        last_album = await search.search_lastfm_album(search_query)
 
     spotify_album = await search.search_spotify_album(search_query, extended=True)
 
@@ -298,7 +300,7 @@ async def artist(ctx, *, search_query=""):
     urls = dict()
 
     if not search_query and get_lastfm_user(ctx.author):
-        scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
+        scrobble = await search.get_scrobble(get_lastfm_user(ctx.author))
         if scrobble:
             search_query = f"'{scrobble.artist.name}'"
 
@@ -308,9 +310,9 @@ async def artist(ctx, *, search_query=""):
     # Use exact search if the "query is in quotes" or 'in quotes'
     quotes = ['"', "'"]
     if search_query[0] in quotes and search_query[-1] in quotes and search_query[0] == search_query[-1]:
-        last_result = search.search_lastfm_artist(search_query[1:-1], exact=True)
+        last_result = await search.search_lastfm_artist(search_query[1:-1], exact=True)
     else:
-        last_result = search.search_lastfm_artist(search_query)
+        last_result = await search.search_lastfm_artist(search_query)
 
     embed = discord.Embed()
     embed.title = last_result.name
@@ -337,6 +339,7 @@ async def artist(ctx, *, search_query=""):
              options=[create_option(
                  name="search_query", description="name of the album", required=False,
                  option_type=SlashCommandOptionType.STRING)])
+@auto_defer
 async def _album(ctx, search_query=""):
     await album(ctx, search_query=search_query)
 
@@ -345,6 +348,7 @@ async def _album(ctx, search_query=""):
              options=[create_option(
                  name="search_query", description="name of the artist", required=False,
                  option_type=SlashCommandOptionType.STRING)])
+@auto_defer
 async def _artist(ctx, search_query=""):
     await artist(ctx, search_query=search_query)
 
@@ -353,6 +357,7 @@ async def _artist(ctx, search_query=""):
              options=[create_option(
                  name="search_query", description="name of the track", required=False,
                  option_type=SlashCommandOptionType.STRING)])
+@auto_defer
 async def _track(ctx, search_query=""):
     await track(ctx, search_query=search_query)
 
@@ -372,14 +377,14 @@ async def _register(ctx, lastfm_name):
 
 
 @slash.subcommand(base="last", name="now", description="Fetch the currently playing song", guild_ids=slash_guilds)
+@auto_defer
 async def _now(ctx: SlashContext):
-    await ctx.defer()
     await now(ctx)
 
 
 @slash.subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles", guild_ids=slash_guilds)
+@auto_defer
 async def _recent(ctx):
-    await ctx.defer()
     await recent(ctx)
 
 
@@ -388,8 +393,8 @@ async def _recent(ctx):
                       name="period", description="Time period", required=False,
                       option_type=SlashCommandOptionType.STRING,
                       choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+@auto_defer
 async def _artists(ctx, period="all"):
-    await ctx.defer()
     await artists(ctx, period)
 
 
@@ -398,8 +403,8 @@ async def _artists(ctx, period="all"):
                       name="period", description="Time period", required=False,
                       option_type=SlashCommandOptionType.STRING,
                       choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+@auto_defer
 async def _albums(ctx, period="all"):
-    await ctx.defer()
     await albums(ctx, period)
 
 
@@ -408,21 +413,21 @@ async def _albums(ctx, period="all"):
                       name="period", description="Time period", required=False,
                       option_type=SlashCommandOptionType.STRING,
                       choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+@auto_defer
 async def _tracks(ctx, period="all"):
-    await ctx.defer()
     await tracks(ctx, period)
 
 
-@slash.slash(name="lyricsGenius", description="Gets the Genius link for the song you're currently listening to",
+@slash.slash(name="lyricsgenius", description="Gets the Genius link for the song you're currently listening to",
              guild_ids=slash_guilds)
+@auto_defer
 async def _lyrics(ctx):
-    await ctx.defer()
-    scrobble = search.get_scrobble(get_lastfm_user(ctx.author))
+    scrobble = await search.get_scrobble(get_lastfm_user(ctx.author))
 
     if not scrobble:
         await reply_on_error(ctx, "Nothing is currently scrobbling.")
 
-    song = genius.search_song(title=str(scrobble), artist=str(scrobble.artist.name))
+    song = await asyncio.to_thread(genius.search_song, title=str(scrobble), artist=str(scrobble.artist.name))
 
     if not song:
         await reply_on_error(ctx, f"Could not find '{scrobble.artist.name} - {scrobble.name}' on Genius.")

@@ -1,31 +1,34 @@
-from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, SimpleTrack, FullTrack
+import asyncio
+
+from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, FullTrack
 
 from music import lastfm_net, spotify_api
 from music.classes import *
 
 
-def get_scrobble(username: str) -> Optional[Track]:
-    result = lastfm_net.get_user(username).get_now_playing()
-    return pack_lastfm_track(result)
+async def get_scrobble(username: str) -> Optional[Track]:
+    result = await asyncio.to_thread(lastfm_net.get_user(username).get_now_playing)
+    return await asyncio.to_thread(pack_lastfm_track, result)
 
 
-def search_lastfm_album(search: str) -> Optional[Album]:
-    result = lastfm_net.search_for_album(search).get_next_page()[0]
-    return pack_lastfm_album(result)
+async def search_lastfm_album(search: str) -> Optional[Album]:
+    result = await asyncio.to_thread(lastfm_net.search_for_album(search).get_next_page)
+    return await asyncio.to_thread(pack_lastfm_album, result[0])
 
 
-def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
+async def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
     result = lastfm_net.get_track(artist, title)
-    return pack_lastfm_track(result)
+    return await asyncio.to_thread(pack_lastfm_track, result)
 
 
-def search_lastfm_artist(artist: str, exact=False) -> Optional[Artist]:
+async def search_lastfm_artist(artist: str, exact=False) -> Optional[Artist]:
     if exact:
         result = lastfm_net.get_artist(artist)
     else:
-        result = lastfm_net.search_for_artist(artist).get_next_page()[0]
+        result = await asyncio.to_thread(lastfm_net.search_for_artist(artist).get_next_page)
+        result = result[0]
 
-    return pack_lastfm_artist(result)
+    return await asyncio.to_thread(pack_lastfm_artist, result)
 
 
 def pack_lastfm_artist(data: pylast.Artist) -> Optional[Artist]:
@@ -130,8 +133,8 @@ def pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
         return None
 
     track = Track()
-    track.name = data.get_name(properly_capitalized=True)
-    track.artist.name = data.get_artist().get_name(properly_capitalized=True)
+    track.name = data.get_name()
+    track.artist.name = data.get_artist().get_name()
     track.url = data.get_url()
 
     if data.get_album():
@@ -145,8 +148,8 @@ def pack_lastfm_album(data: pylast.Album) -> Optional[Album]:
         return None
 
     album = Album()
-    album.name = data.get_name(properly_capitalized=True)
-    album.artist.name = data.get_artist().get_name(properly_capitalized=True)
+    album.name = data.get_name()
+    album.artist.name = data.get_artist().get_name()
     album.url = data.get_url()
     album.img_url = data.get_cover_image()
 
