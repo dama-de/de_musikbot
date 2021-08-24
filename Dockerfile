@@ -1,4 +1,4 @@
-FROM alpine:3
+FROM alpine:latest
 
 RUN apk add python3 py3-pip py3-aiohttp
 
