@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from functools import wraps
 
 from discord_slash import SlashContext
@@ -17,6 +18,11 @@ def auto_defer(func):
                 await ctx.defer()
 
         asyncio.create_task(delayed_defer())
-        await func(*args, **kwargs)
+
+        try:
+            await func(*args, **kwargs)
+        except Exception as e:
+            logging.error("An Exception occurred during deferred execution.", exc_info=e)
+            await ctx.send("There was an error processing your commmand. Please try again.", hidden=True)
 
     return decorator
