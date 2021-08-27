@@ -426,11 +426,13 @@ async def _lyrics(ctx):
 
     if not scrobble:
         await reply_on_error(ctx, "Nothing is currently scrobbling.")
+        return
 
     song = await asyncio.to_thread(genius.search_song, title=str(scrobble), artist=str(scrobble.artist.name))
 
     if not song:
         await reply_on_error(ctx, f"Could not find '{scrobble.artist.name} - {scrobble.name}' on Genius.")
+        return
 
     embed = discord.Embed(title='Genius Lyrics')
     embed.add_field(name='Link', value=str(song.url))
