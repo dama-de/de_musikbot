@@ -38,7 +38,7 @@ class Music(commands.Cog):
             file.close()
 
     def load(self):
-        if os.path.exists(os.path.join(self.datadir, "data.json")):
+        if os.path.exists(self.datafile):
             with open(self.datafile, "r") as file:
                 data = json.loads(file.read())
 
