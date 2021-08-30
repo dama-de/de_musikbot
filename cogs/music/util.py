@@ -1,15 +1,4 @@
-import os
 from urllib.parse import quote_plus
-
-import lyricsgenius
-import pylast
-import tekore as tk
-
-lastfm_net = pylast.LastFMNetwork(api_key=(os.environ["LAST_API_KEY"]), api_secret=(os.environ["LAST_API_SECRET"]))
-spotify_api = tk.Spotify(
-    tk.request_client_token(os.environ["SPOTIFY_CLIENT_ID"], os.environ["SPOTIFY_CLIENT_SECRET"]),
-    asynchronous=True)
-genius = lyricsgenius.Genius(os.environ["GENIUS_CLIENT_SECRET"])
 
 
 def rym_search(query, searchtype=None):

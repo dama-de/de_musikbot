@@ -1,11 +1,26 @@
 import asyncio
+import os
 from typing import Optional
 
+import lyricsgenius
 import pylast
+import tekore
 from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, FullTrack
 
 from .classes import *
-from .util import lastfm_net, spotify_api
+
+lastfm_net = pylast.LastFMNetwork(
+    api_key=(os.environ["LAST_API_KEY"]),
+    api_secret=(os.environ["LAST_API_SECRET"]))
+
+spotify_api = tekore.Spotify(
+    tekore.request_client_token(
+        os.environ["SPOTIFY_CLIENT_ID"],
+        os.environ["SPOTIFY_CLIENT_SECRET"]),
+    asynchronous=True)
+
+genius = lyricsgenius.Genius(
+    os.environ["GENIUS_CLIENT_SECRET"])
 
 
 async def get_scrobble(username: str) -> Optional[Track]:

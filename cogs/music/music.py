@@ -13,7 +13,8 @@ from discord_slash.utils.manage_commands import create_option
 
 from util import auto_defer
 from . import search
-from .util import lastfm_net, rym_search, mklinks, genius
+from .search import lastfm_net, genius
+from .util import rym_search, mklinks
 
 slash_guilds = None
 
@@ -21,9 +22,11 @@ slash_guilds = None
 class Music(commands.Cog):
     def __init__(self, bot):
         self._bot = bot
+
         self.data = {"names": {"132551667085344769": "dam4rusxp"}}
         self.datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else "./data/"
         self.datafile = os.path.join(self.datadir, "data.json")
+
         self.load()
         self.save()
 
