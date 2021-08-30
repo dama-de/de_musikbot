@@ -1,9 +1,11 @@
 import asyncio
+from typing import Optional
 
+import pylast
 from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, FullTrack
 
-from music import lastfm_net, spotify_api
-from music.classes import *
+from .classes import *
+from .util import lastfm_net, spotify_api
 
 
 async def get_scrobble(username: str) -> Optional[Track]:

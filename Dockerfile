@@ -3,7 +3,7 @@ FROM alpine:latest
 RUN apk add python3 py3-pip py3-aiohttp
 
 ADD main.py requirements.txt /bot/
-ADD music/ /bot/music/
+ADD cogs/ /bot/cogs/
 ADD util/ /bot/util/
 
 VOLUME /data

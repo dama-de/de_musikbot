@@ -4,9 +4,6 @@ from urllib.parse import quote_plus
 import lyricsgenius
 import pylast
 import tekore as tk
-from dotenv import load_dotenv
-
-load_dotenv(verbose=True)
 
 lastfm_net = pylast.LastFMNetwork(api_key=(os.environ["LAST_API_KEY"]), api_secret=(os.environ["LAST_API_SECRET"]))
 spotify_api = tk.Spotify(

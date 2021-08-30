@@ -1,9 +1,3 @@
-from typing import Optional
-
-import discord
-import pylast
-
-
 class NamedBase:
     __slots__ = ("name",)
 
