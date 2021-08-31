@@ -13,10 +13,10 @@ log = logging.getLogger(__name__)
 class DamaBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=os.environ["PREFIX"])
-        self.load_extension("cogs.admin")
-        self.load_extension("cogs.music")
 
     async def on_ready(self):
+        self.load_extension("cogs.admin")
+        self.load_extension("cogs.music")
         log.info(f"Online as {self.user.name}. ID: {self.user.id}")
 
     async def on_command_error(self, ctx, error):
