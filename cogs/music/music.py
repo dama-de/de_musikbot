@@ -327,10 +327,6 @@ class Music(commands.Cog):
     async def _track(self, ctx, search_query=""):
         await self.track(ctx, search_query=search_query)
 
-    @cog_ext.cog_slash(name="last", guild_ids=slash_guilds)
-    async def _last(self, ctx):
-        pass
-
     @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
 
                             options=[create_option(
