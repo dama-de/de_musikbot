@@ -1,6 +1,4 @@
 import asyncio
-import json
-import os
 from typing import Optional
 
 import discord
@@ -12,6 +10,7 @@ from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
 
 from util import auto_defer
+from util.config import Config
 from . import search
 from .search import lastfm_net, genius
 from .util import rym_search, mklinks
@@ -23,27 +22,17 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self._bot = bot
 
-        self.data = {"names": {"132551667085344769": "dam4rusxp"}}
-        self.datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else "./data/"
-        self.datafile = os.path.join(self.datadir, "data.json")
+        self.config = Config("music")
+        self.data = self.config.data
 
-        self.load()
-        self.save()
+        if not self.data:
+            self.data["names"] = {"132551667085344769": "dam4rusxp"}
+            self.config.save()
 
     def get_lastfm_user(self, user: discord.User) -> Optional[str]:
         if str(user.id) in self.data["names"]:
             return self.data["names"][str(user.id)]
         return None
-
-    def save(self):
-        with open(self.datafile, "w") as file:
-            file.write(json.dumps(self.data))
-            file.close()
-
-    def load(self):
-        if os.path.exists(self.datafile):
-            with open(self.datafile, "r") as file:
-                data = json.loads(file.read())
 
     async def reply_on_error(self, ctx, message: str):
         if isinstance(ctx, SlashContext):
@@ -63,7 +52,7 @@ class Music(commands.Cog):
     async def register(self, ctx: discord.ext.commands.Context, lastfm_name):
         """Register your last.fm account with this bot."""
         self.data["names"][str(ctx.author.id)] = lastfm_name
-        self.save()
+        self.config.save()
         if isinstance(ctx, SlashContext):
             await ctx.send("Done.", hidden=True)
         else:
@@ -328,7 +317,6 @@ class Music(commands.Cog):
         await self.track(ctx, search_query=search_query)
 
     @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
-
                             options=[create_option(
                                 name="lastfm_name", description="Your last.fm username", required=True,
                                 option_type=SlashCommandOptionType.STRING)])
@@ -348,7 +336,6 @@ class Music(commands.Cog):
         await self.recent(ctx)
 
     @cog_ext.cog_subcommand(base="last", name="artists", description="Fetch your most played artists",
-
                             options=[create_option(
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
@@ -358,7 +345,6 @@ class Music(commands.Cog):
         await self.artists(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="albums", description="Fetch your most played albums",
-
                             options=[create_option(
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
@@ -368,7 +354,6 @@ class Music(commands.Cog):
         await self.albums(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="tracks", description="Fetch your most played tracks",
-
                             options=[create_option(
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
