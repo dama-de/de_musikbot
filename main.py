@@ -13,6 +13,7 @@ log = logging.getLogger(__name__)
 class DamaBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=os.environ["PREFIX"])
+        self.load_extension("cogs.admin")
         self.load_extension("cogs.music")
 
     async def on_ready(self):
@@ -31,7 +32,7 @@ def main():
     logging.basicConfig(level=_loglevel, format="%(levelname)-5s | %(asctime)s | %(name)-18s | %(message)s")
 
     bot = DamaBot()
-    slash = SlashCommand(bot, sync_commands=True, delete_from_unused_guilds=True)
+    slash = SlashCommand(bot)
 
     bot.run(os.environ["DISCORD_TOKEN"])
 
