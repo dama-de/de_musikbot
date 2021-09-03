@@ -56,7 +56,7 @@ class Music(commands.Cog):
         if isinstance(ctx, SlashContext):
             await ctx.send("Done.", hidden=True)
         else:
-            await ctx.message.add_reaction(u'\U00002611')
+            await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
     @last.command()
     async def now(self, ctx):
