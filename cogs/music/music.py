@@ -4,7 +4,7 @@ from typing import Optional
 import discord
 import pylast
 from discord.ext import commands
-from discord.ext.commands import MissingRequiredArgument
+from discord.ext.commands import MissingRequiredArgument, Bot
 from discord.utils import find
 from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
@@ -19,7 +19,7 @@ slash_guilds = None
 
 
 class Music(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: Bot):
         self._bot = bot
 
         self.config = Config("music")
@@ -49,7 +49,7 @@ class Music(commands.Cog):
             await ctx.send("Try `{}help`".format(ctx.prefix))
 
     @last.command()
-    async def register(self, ctx: discord.ext.commands.Context, lastfm_name):
+    async def register(self, ctx, lastfm_name: str):
         """Register your last.fm account with this bot."""
         self.data["names"][str(ctx.author.id)] = lastfm_name
         self.config.save()
@@ -200,7 +200,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def track(self, ctx, *, search_query):
+    async def track(self, ctx, *, search_query: str):
         """Search for a single track"""
         result = await search.search_spotify_track(search_query)
         url = result.url
@@ -297,7 +297,7 @@ class Music(commands.Cog):
                            name="search_query", description="name of the album", required=False,
                            option_type=SlashCommandOptionType.STRING)])
     @auto_defer
-    async def _album(self, ctx, search_query=""):
+    async def _album(self, ctx: SlashContext, search_query=""):
         await self.album(ctx, search_query=search_query)
 
     @cog_ext.cog_slash(name="artist", description="Search for an artist",
@@ -305,7 +305,7 @@ class Music(commands.Cog):
                            name="search_query", description="name of the artist", required=False,
                            option_type=SlashCommandOptionType.STRING)])
     @auto_defer
-    async def _artist(self, ctx, search_query=""):
+    async def _artist(self, ctx: SlashContext, search_query=""):
         await self.artist(ctx, search_query=search_query)
 
     @cog_ext.cog_slash(name="track", description="Search for a track",
@@ -313,14 +313,14 @@ class Music(commands.Cog):
                            name="search_query", description="name of the track", required=False,
                            option_type=SlashCommandOptionType.STRING)])
     @auto_defer
-    async def _track(self, ctx, search_query=""):
+    async def _track(self, ctx: SlashContext, search_query=""):
         await self.track(ctx, search_query=search_query)
 
     @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
                             options=[create_option(
                                 name="lastfm_name", description="Your last.fm username", required=True,
                                 option_type=SlashCommandOptionType.STRING)])
-    async def _register(self, ctx, lastfm_name):
+    async def _register(self, ctx: SlashContext, lastfm_name):
         await self.register(ctx, lastfm_name)
 
     @cog_ext.cog_subcommand(base="last", name="now", description="Fetch the currently playing song",
@@ -332,7 +332,7 @@ class Music(commands.Cog):
     @cog_ext.cog_subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles",
                             guild_ids=slash_guilds)
     @auto_defer
-    async def _recent(self, ctx):
+    async def _recent(self, ctx: SlashContext):
         await self.recent(ctx)
 
     @cog_ext.cog_subcommand(base="last", name="artists", description="Fetch your most played artists",
@@ -341,7 +341,7 @@ class Music(commands.Cog):
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
     @auto_defer
-    async def _artists(self, ctx, period="all"):
+    async def _artists(self, ctx: SlashContext, period="all"):
         await self.artists(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="albums", description="Fetch your most played albums",
@@ -350,7 +350,7 @@ class Music(commands.Cog):
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
     @auto_defer
-    async def _albums(self, ctx, period="all"):
+    async def _albums(self, ctx: SlashContext, period="all"):
         await self.albums(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="tracks", description="Fetch your most played tracks",
@@ -359,14 +359,14 @@ class Music(commands.Cog):
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
     @auto_defer
-    async def _tracks(self, ctx, period="all"):
+    async def _tracks(self, ctx: SlashContext, period="all"):
         await self.tracks(ctx, period)
 
     @cog_ext.cog_slash(name="lyricsgenius",
                        description="Gets the Genius link for the song you're currently listening to",
                        guild_ids=slash_guilds)
     @auto_defer
-    async def _lyrics(self, ctx):
+    async def _lyrics(self, ctx: SlashContext):
         scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
 
         if not scrobble:
