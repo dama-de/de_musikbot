@@ -26,4 +26,4 @@ class Config:
     def load(self):
         if os.path.exists(self.datafile):
             with open(self.datafile, "r") as file:
-                data = json.loads(file.read())
+                self._data = json.loads(file.read())
