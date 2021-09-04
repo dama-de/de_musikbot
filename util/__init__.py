@@ -2,27 +2,34 @@ import asyncio
 import logging
 from functools import wraps
 
+from discord import NotFound
 from discord_slash import SlashContext
+
+_log = logging.getLogger(__name__)
 
 
 def auto_defer(func):
     @wraps(func)
     async def decorator(*args, **kwargs):
+        # Try to find the SlashContext in the parameters
         ctx = next(x for x in args if isinstance(x, SlashContext))
         if not ctx:
             raise Exception("Could not find SlashContext parameter")
 
         async def delayed_defer():
-            await asyncio.sleep(2)
+            await asyncio.sleep(1.5)
             if not ctx.responded:
-                await ctx.defer()
+                try:
+                    await ctx.defer()
+                except NotFound:
+                    # If the interaction has already diappeared, there's nothing we can do
+                    _log.warning("Defer happened after the interaction had disappeared")
 
+        # Run delayed_defer in parallel with the command, so that it can automatically make the defer call,
+        # if command execution takes too long.
         asyncio.create_task(delayed_defer())
 
-        try:
-            await func(*args, **kwargs)
-        except Exception as e:
-            logging.error("An Exception occurred during deferred execution.", exc_info=e)
-            await ctx.send("There was an error processing your commmand. Please try again.", hidden=True)
+        # Run the actual command
+        await func(*args, **kwargs)
 
     return decorator

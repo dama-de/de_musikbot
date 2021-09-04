@@ -3,6 +3,7 @@ from typing import Optional
 
 import discord
 import pylast
+import tekore
 from discord.ext import commands
 from discord.ext.commands import MissingRequiredArgument, Bot
 from discord.utils import find
@@ -40,6 +41,24 @@ class Music(commands.Cog):
         else:
             await ctx.reply(message)
         return
+
+    async def cog_command_error(self, ctx, error):
+        """
+        We use this method to handle the most common errors in the cog, so it doesn't have to be
+        done for each command separately. It will be called automatically from discord.py.
+        """
+        if isinstance(error, pylast.PyLastError):
+            await self.reply_on_error(
+                ctx, "There was an error while communicating with the Last.fm API, please try again later."
+            )
+        elif isinstance(error, tekore.HTTPError):
+            await self.reply_on_error(
+                ctx, "There was an error while communicating with the Spotify API, please try again later."
+            )
+        else:
+            await self.reply_on_error(
+                ctx, "There was an unknown error, please contact the bot owner."
+            )
 
     # ---------- Regular commands ----------
     @commands.group()
