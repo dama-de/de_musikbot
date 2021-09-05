@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Optional
 
 import discord
@@ -9,13 +10,15 @@ from discord.utils import find
 from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
 
-from util import auto_defer
+from util import auto_defer, get_command
 from util.config import Config
 from . import search
 from .search import lastfm_net, genius
 from .util import rym_search, mklinks
 
 slash_guilds = None
+
+_log = logging.getLogger(__name__)
 
 
 class Music(Cog):
@@ -47,14 +50,17 @@ class Music(Cog):
         done for each command separately. It will be called automatically from discord.py.
         """
         if isinstance(error, pylast.PyLastError):
+            _log.warning("Last.fm did not respond on time.")
             await self.reply_on_error(
                 ctx, "There was an error while communicating with the Last.fm API, please try again later."
             )
         elif isinstance(error, tekore.HTTPError):
+            _log.warning("Spotify did not respond on time.")
             await self.reply_on_error(
                 ctx, "There was an error while communicating with the Spotify API, please try again later."
             )
         else:
+            _log.error("Unhandled error during command: " + get_command(ctx), exc_info=error)
             await self.reply_on_error(
                 ctx, "There was an unknown error, please contact the bot owner."
             )
