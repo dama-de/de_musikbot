@@ -4,8 +4,7 @@ from typing import Optional
 import discord
 import pylast
 import tekore
-from discord.ext import commands
-from discord.ext.commands import MissingRequiredArgument, Bot
+from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group
 from discord.utils import find
 from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
@@ -19,7 +18,7 @@ from .util import rym_search, mklinks
 slash_guilds = None
 
 
-class Music(commands.Cog):
+class Music(Cog):
     def __init__(self, bot: Bot):
         self._bot = bot
 
@@ -60,8 +59,13 @@ class Music(commands.Cog):
                 ctx, "There was an unknown error, please contact the bot owner."
             )
 
+    @Cog.listener()
+    async def on_slash_command_error(self, ctx: SlashContext, error: Exception):
+        # Forward the exception to the regular error handler
+        await self.cog_command_error(ctx, error)
+
     # ---------- Regular commands ----------
-    @commands.group()
+    @group()
     async def last(self, ctx):
         """last.fm command category"""
         if not ctx.invoked_subcommand:
@@ -218,14 +222,14 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @command()
     async def track(self, ctx, *, search_query: str):
         """Search for a single track"""
         result = await search.search_spotify_track(search_query)
         url = result.url
         await ctx.send(url)
 
-    @commands.command()
+    @command()
     async def album(self, ctx, *, search_query=""):
         """Search for an album"""
         urls = dict()
@@ -271,7 +275,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command()
+    @command()
     async def artist(self, ctx, *, search_query=""):
         """Search for an artist"""
         urls = dict()
