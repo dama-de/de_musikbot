@@ -99,7 +99,7 @@ class Music(Cog):
             return
 
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name))
-        embed.set_author(name=author, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=author, icon_url=ctx.author.avatar.url)
         embed.set_footer(text="Now scrobbling on last.fm")
         embed.url = track.url
 
@@ -125,7 +125,7 @@ class Music(Cog):
         recent_scrobbles = lfmuser.get_recent_tracks()
 
         embed = discord.Embed(title="Recent scrobbles")
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 
         for i in range(len(recent_scrobbles)):
             scrobble = recent_scrobbles[i]
@@ -177,7 +177,7 @@ class Music(Cog):
         description = self.make_table(self.tbl_format, cols)
 
         embed = discord.Embed(title="Top tracks (" + period + ")", description=description)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 
         await ctx.send(embed=embed)
 
@@ -201,7 +201,7 @@ class Music(Cog):
         description = self.make_table(self.tbl_format, cols)
 
         embed = discord.Embed(title="Top albums (" + period + ")", description=description)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 
         await ctx.send(embed=embed)
 
@@ -224,7 +224,7 @@ class Music(Cog):
         description = self.make_table(self.tbl_artist_format, cols)
 
         embed = discord.Embed(title="Top artists (" + period + ")", description=description)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
 
         await ctx.send(embed=embed)
 
