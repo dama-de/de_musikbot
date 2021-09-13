@@ -67,6 +67,11 @@ class Music(Cog):
 
     @Cog.listener()
     async def on_slash_command_error(self, ctx: SlashContext, error: Exception):
+        if isinstance(error, discord.NotFound) and error.code == 10062:
+            # NotFound with code 10062 means that the interaction timed out before we sent a response
+            _log.warning("Interaction timed out: " + get_command(ctx))
+            return
+
         # Forward the exception to the regular error handler
         await self.cog_command_error(ctx, error)
 
