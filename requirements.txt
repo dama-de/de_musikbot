@@ -1,4 +1,4 @@
-git+https://github.com/Rapptz/discord.py.git
+discord.py == 1.7.3
 pylast == 4.2.1
 tekore == 3.7.1
 python-dotenv == 0.19
