@@ -397,23 +397,29 @@ class Music(Cog):
         await self.tracks(ctx, period)
 
     @cog_ext.cog_slash(name="lyricsgenius",
-                       description="Gets the Genius link for the song you're currently listening to",
-                       guild_ids=slash_guilds)
+                       description="Search for a Genius page, or get the page of the Song your're listening to",
+                       guild_ids=slash_guilds,
+                       options=[create_option(
+                           name="search_query", description="Title and artist of the song", required=False,
+                           option_type=SlashCommandOptionType.STRING
+                       )])
     @auto_defer
-    async def _lyrics(self, ctx: SlashContext):
-        scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
+    async def _lyrics(self, ctx: SlashContext, search_query=None):
+        # Use the current scrobble if no search was submitted
+        if not search_query:
+            scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
+            if not scrobble:
+                await self.reply_on_error(ctx, "Nothing is currently scrobbling.")
+                return
+            search_query = f"{scrobble.name} {scrobble.artist.name}"
 
-        if not scrobble:
-            await self.reply_on_error(ctx, "Nothing is currently scrobbling.")
-            return
-
-        song = await asyncio.to_thread(genius.search_song, title=str(scrobble), artist=str(scrobble.artist.name))
+        song = await asyncio.to_thread(genius.search_song, title=search_query, get_full_info=False)
 
         if not song:
-            await self.reply_on_error(ctx, f"Could not find '{scrobble.artist.name} - {scrobble.name}' on Genius.")
+            await self.reply_on_error(ctx, f"Could not find '{search_query}' on Genius.")
             return
 
         embed = discord.Embed(title='Genius Lyrics')
         embed.add_field(name='Link', value=str(song.url))
-        embed.set_thumbnail(url=scrobble.album.img_url)
+        embed.set_thumbnail(url=song.header_image_url)
         await ctx.send(embed=embed)
