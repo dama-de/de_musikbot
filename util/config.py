@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 
 class Config:
@@ -10,6 +11,8 @@ class Config:
 
         self.datadir = os.environ["DATA_DIR"] if "DATA_DIR" in os.environ else "./data/"
         self.datafile = os.path.join(self.datadir, f"{name}.json")
+
+        Path(self.datadir).mkdir(parents=True, exist_ok=True)
 
         self.load()
         self.save()
