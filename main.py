@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 class DamaBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=os.environ["PREFIX"])
+        self._slash = SlashCommand(self)
 
     async def on_ready(self):
         self.load_extension("cogs.admin")
@@ -29,13 +30,17 @@ class DamaBot(commands.Bot):
 def main():
     load_dotenv(verbose=True)
 
-    _loglevel = os.environ["LOG_LEVEL"] if "LOG_LEVEL" in os.environ else "INFO"
-    logging.basicConfig(level=_loglevel, format="%(levelname)-7s | %(asctime)s | %(name)-18s | %(message)s")
+    setup_logging()
 
     bot = DamaBot()
-    slash = SlashCommand(bot)
 
     bot.run(os.environ["DISCORD_TOKEN"])
+
+
+def setup_logging():
+    _loglevel = os.environ["LOG_LEVEL"] if "LOG_LEVEL" in os.environ else "INFO"
+    logging.basicConfig(level=_loglevel, format="%(levelname)-7s | %(asctime)s | %(name)-18s | %(message)s")
+    logging.getLogger("discord").setLevel("INFO")
 
 
 if __name__ == "__main__":
