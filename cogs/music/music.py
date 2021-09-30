@@ -15,7 +15,7 @@ from util.config import Config
 from . import search
 from .classes import Album, Artist
 from .search import lastfm_net, genius
-from .util import rym_search, mklinks
+from .util import rym_search, mklinks, make_table, tbl_format, tbl_artist_format
 
 slash_guilds = None
 
@@ -109,10 +109,9 @@ class Music(Cog):
         if sp_result:
             track.update(sp_result)
 
-        embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name))
+        embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
         embed.set_author(name=author, icon_url=ctx.author.avatar_url)
         embed.set_footer(text="Now scrobbling on last.fm")
-        embed.url = track.url
         embed.set_thumbnail(url=getattr(track.album, "img_url", EmptyEmbed))
 
         # If an album date exists, mention the year in the description, else suppress
@@ -144,22 +143,6 @@ class Music(Cog):
                "6m": pylast.PERIOD_6MONTHS,
                "12m": pylast.PERIOD_12MONTHS}
 
-    col1_width = 22
-    col2_width = 22
-
-    tbl_format = "{:>2}|{:#.#}|{:$.$}|{:>4}\n".replace("#", str(col1_width)).replace("$", str(col2_width))
-    tbl_artist_format = "{:>2}|{:#.#}|{:>4}\n".replace("#", str(col1_width + col2_width + 1))
-
-    def make_table(self, format_string, cols: dict):
-        table = "```\n"
-        table += format_string.format(*cols.keys()).replace(" ", "_")
-
-        for items in zip(*cols.values()):
-            table += format_string.format(*items)
-
-        table += "```"
-        return table
-
     @last.command()
     async def tracks(self, ctx, period="all"):
         """Fetch your most played tracks.
@@ -177,9 +160,8 @@ class Music(Cog):
             "Scr.": [t.weight for t in top_tracks]
         }
 
-        description = self.make_table(self.tbl_format, cols)
-
-        embed = discord.Embed(title="Top tracks (" + period + ")", description=description)
+        embed = discord.Embed(title="Top tracks (" + period + ")")
+        embed.description = make_table(tbl_format, cols)
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
@@ -201,9 +183,8 @@ class Music(Cog):
             "Scr.": [t.weight for t in top_albums]
         }
 
-        description = self.make_table(self.tbl_format, cols)
-
-        embed = discord.Embed(title="Top albums (" + period + ")", description=description)
+        embed = discord.Embed(title="Top albums (" + period + ")")
+        embed.description = make_table(tbl_format, cols)
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
@@ -224,9 +205,8 @@ class Music(Cog):
             "Scr.": [t.weight for t in top_artists]
         }
 
-        description = self.make_table(self.tbl_artist_format, cols)
-
-        embed = discord.Embed(title="Top artists (" + period + ")", description=description)
+        embed = discord.Embed(title="Top artists (" + period + ")")
+        embed.description = make_table(tbl_artist_format, cols)
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
@@ -311,10 +291,8 @@ class Music(Cog):
 
         urls["RYM"] = rym_search(artist.name, searchtype="a")
 
-        embed = discord.Embed()
-        embed.title = artist.name
+        embed = discord.Embed(title=artist.name, url=artist.url)
         embed.set_thumbnail(url=getattr(artist, "img_url", EmptyEmbed))
-        embed.url = artist.url
         embed.description = f"{artist.bio}\n\nTop Tags: {artist.tags}\n\n{mklinks(urls)}"
 
         await ctx.send(embed=embed)

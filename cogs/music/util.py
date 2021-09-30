@@ -15,3 +15,21 @@ def mklinks(urls: dict) -> str:
         result += f"{sep}[{key}]({urls[key]})"
         sep = " | "
     return result
+
+
+col1_width = 22
+col2_width = 22
+
+tbl_format = "{:>2}|{:#.#}|{:$.$}|{:>4}\n".replace("#", str(col1_width)).replace("$", str(col2_width))
+tbl_artist_format = "{:>2}|{:#.#}|{:>4}\n".replace("#", str(col1_width + col2_width + 1))
+
+
+def make_table(format_string, cols: dict):
+    table = "```\n"
+    table += format_string.format(*cols.keys()).replace(" ", "_")
+
+    for items in zip(*cols.values()):
+        table += format_string.format(*items)
+
+    table += "```"
+    return table
