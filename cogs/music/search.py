@@ -107,8 +107,11 @@ def pack_spotify_track(data) -> Optional[Track]:
     result = Track()
     result.name = data.name
     result.url = data.external_urls["spotify"]
+    result.album.name = data.album.name
+    result.album.artist.name = _join_spotify_artists(data.album)
     result.album.img_url = data.album.images[0].url
     result.album.date = data.album.release_date
+    result.artist.name = _join_spotify_artists(data)
 
     return result
 
@@ -133,7 +136,7 @@ def pack_spotify_album(data) -> Optional[Album]:
 
     result = Album()
     result.name = data.name
-    result.artist.name = ", ".join([a.name for a in data.artists])
+    result.artist.name = _join_spotify_artists(data)
     result.url = data.external_urls["spotify"]
     result.img_url = data.images[0].url
     result.date = data.release_date
@@ -143,6 +146,10 @@ def pack_spotify_album(data) -> Optional[Album]:
         result.tracks = len(data.tracks.items)
 
     return result
+
+
+def _join_spotify_artists(data):
+    return ", ".join([a.name for a in data.artists])
 
 
 def pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
