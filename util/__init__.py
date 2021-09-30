@@ -1,10 +1,10 @@
-import asyncio
 import logging
-from functools import wraps
+import os
 
-from discord import NotFound
 from discord.ext.commands import Context
-from discord_slash import SlashContext
+
+if "SKIP_SLASH" not in os.environ:
+    from discord_slash import SlashContext
 
 _log = logging.getLogger(__name__)
 

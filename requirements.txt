@@ -4,3 +4,7 @@ tekore == 3.7.1
 python-dotenv == 0.19
 discord-py-interactions == 3.0.2
 lyricsgenius == 3.0.1
+pytest == 6.2.5
+pytest-asyncio == 0.16.0
+pytest-mock == 3.6.1
+dpytest == 0.5.3

@@ -1,15 +1,27 @@
 import asyncio
+import functools
+import logging
 import os
-from typing import Optional
+from typing import Optional, Union, List
 
 import discord
 import lyricsgenius
 import pylast
 import tekore
-from tekore._model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, FullTrack
+from tekore.model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, FullTrack
 
 from .classes import *
 
+# This module provides lookup functions for various music services
+# Notes:
+# - Before importing the module, the following environment vars need to be set:
+#       LAST_API_KEY, LAST_API_SECRET, SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, GENIUS_CLIENT_SECRET
+# - pylast is not async, so calls should be wrapped in asyncio.to_thread
+
+_log = logging.getLogger(__name__)
+
+# Init APIs
+# TODO This should be moved to some place where it's not being run on import
 lastfm_net = pylast.LastFMNetwork(
     api_key=(os.environ["LAST_API_KEY"]),
     api_secret=(os.environ["LAST_API_SECRET"]))
@@ -24,19 +36,30 @@ genius = lyricsgenius.Genius(
     os.environ["GENIUS_CLIENT_SECRET"])
 
 
-async def get_scrobble(username: str) -> Optional[Track]:
+def get_lastfm_user(username: str) -> pylast.User:
+    if not isinstance(username, str):
+        raise TypeError("Username must be a str, but is " + username.__class__.__name__)
+    return lastfm_net.get_user(username)
+
+
+async def get_recent(username: str) -> List[Track]:
+    user = get_lastfm_user(username)
+    return await asyncio.to_thread(user.get_recent_tracks)
+
+
+async def get_scrobble(username: str) -> Optional[Scrobble]:
     result = await asyncio.to_thread(lastfm_net.get_user(username).get_now_playing)
-    return await asyncio.to_thread(pack_lastfm_track, result)
+    return await asyncio.to_thread(_pack_lastfm_scrobble, result)
 
 
 async def search_lastfm_album(search: str) -> Optional[Album]:
     result = await asyncio.to_thread(lastfm_net.search_for_album(search).get_next_page)
-    return await asyncio.to_thread(pack_lastfm_album, result[0])
+    return await asyncio.to_thread(_pack_lastfm_album, result[0])
 
 
 async def search_lastfm_track(artist: str, title: str) -> Optional[Track]:
     result = lastfm_net.get_track(artist, title)
-    return await asyncio.to_thread(pack_lastfm_track, result)
+    return await asyncio.to_thread(_pack_lastfm_track, result)
 
 
 async def search_lastfm_artist(artist: str, exact=False) -> Optional[Artist]:
@@ -46,10 +69,10 @@ async def search_lastfm_artist(artist: str, exact=False) -> Optional[Artist]:
         result = await asyncio.to_thread(lastfm_net.search_for_artist(artist).get_next_page)
         result = result[0]
 
-    return await asyncio.to_thread(pack_lastfm_artist, result)
+    return await asyncio.to_thread(_pack_lastfm_artist, result)
 
 
-def pack_lastfm_artist(data: pylast.Artist) -> Optional[Artist]:
+def _pack_lastfm_artist(data: pylast.Artist) -> Optional[Artist]:
     if not isinstance(data, pylast.Artist):
         return None
 
@@ -62,47 +85,59 @@ def pack_lastfm_artist(data: pylast.Artist) -> Optional[Artist]:
     return result
 
 
-async def search_spotify_artist(query: str, extended=False) -> Optional[Artist]:
-    result = await spotify_api.search(query, types=("artist",), limit=1)
-
-    if result and result[0].items:
-        sp_artist = result[0].items[0]  # type: SimpleArtist
-    else:
-        return None
-
-    if extended:
-        sp_artist = await spotify_api.artist(sp_artist.id)  # type: FullArtist
-
-    return pack_spotify_artist(sp_artist)
+async def search_spotify_artist(query: str) -> Optional[Artist]:
+    result = await _search_spotify(query, types=("artist",))  # type: FullArtist
+    return _pack_spotify_artist(result)
 
 
 async def search_spotify_album(query: str, extended=False) -> Optional[Album]:
-    result = await spotify_api.search(query, types=("album",), limit=1)
+    result = await _search_spotify(query, types=("album",))  # type: SimpleAlbum
 
+    if extended and result:
+        result = await spotify_api.album(result.id)  # type: FullAlbum
+
+    return _pack_spotify_album(result)
+
+
+async def _build_spotify_query(query="", track=None, artist=None, album=None, year=None,
+                               genre=None, upc=None, tag=None, isrc=None) -> str:
+    """https://developer.spotify.com/documentation/web-api/reference/#/operations/search"""
+    rquery = query
+    rquery += f" track:{track}" if track else ""
+    rquery += f" artist:{artist}" if artist else ""
+    rquery += f" album:{album}" if album else ""
+    rquery += f" genre:{genre}" if genre else ""
+    rquery += f" year:{year}" if year else ""
+    rquery += f" upc:{upc}" if upc else ""
+    rquery += f" tag:{tag}" if tag else ""
+    rquery += f" isrc:{isrc}" if isrc else ""
+    return rquery.strip()
+
+
+@functools.wraps(tekore.Spotify.search)
+async def _search_spotify(*args, **kwargs) -> Union[FullTrack, SimpleAlbum, FullArtist, None]:
+    """Search Spotify and return the best result"""
+
+    # Force single result, we can't use more
+    kwargs["limit"] = 1
+
+    _log.debug(f"Querying Spotify: {args}, {kwargs}")
+    result = await spotify_api.search(*args, **kwargs)
+
+    # Try to extract the data object from the raw API response
     if result and result[0].items:
-        sp_album = result[0].items[0]  # type: SimpleAlbum
+        return result[0].items[0]
     else:
         return None
-
-    if extended:
-        sp_album = await spotify_api.album(sp_album.id)  # type: FullAlbum
-
-    return pack_spotify_album(sp_album)
 
 
 async def search_spotify_track(query: str) -> Optional[Track]:
-    result = await spotify_api.search(query, types=("track",), limit=1)
-
-    if result and result[0].items:
-        sp_track = result[0].items[0]  # type: FullTrack
-    else:
-        return None
-
-    return pack_spotify_track(sp_track)
+    result = await _search_spotify(query, types=("track",))
+    return _pack_spotify_track(result)
 
 
-def pack_spotify_track(data) -> Optional[Track]:
-    if not isinstance(data, (FullTrack,)):
+def _pack_spotify_track(data: FullTrack) -> Optional[Track]:
+    if not isinstance(data, FullTrack):
         return None
 
     result = Track()
@@ -117,7 +152,7 @@ def pack_spotify_track(data) -> Optional[Track]:
     return result
 
 
-def pack_spotify_artist(data) -> Optional[Artist]:
+def _pack_spotify_artist(data: Union[SimpleArtist, FullArtist]) -> Optional[Artist]:
     if not isinstance(data, (SimpleArtist, FullArtist)):
         return None
 
@@ -131,7 +166,7 @@ def pack_spotify_artist(data) -> Optional[Artist]:
     return result
 
 
-def pack_spotify_album(data) -> Optional[Album]:
+def _pack_spotify_album(data: Union[SimpleAlbum, FullAlbum]) -> Optional[Album]:
     if not isinstance(data, (SimpleAlbum, FullAlbum)):
         return None
 
@@ -142,9 +177,11 @@ def pack_spotify_album(data) -> Optional[Album]:
     result.img_url = data.images[0].url
     result.date = data.release_date
 
+    # Extended search returns a FullAlbum, which has some additional fields
     if isinstance(data, FullAlbum):
         result.length = sum([t.duration_ms for t in data.tracks.items])
         result.tracks = len(data.tracks.items)
+        result.popularity = data.popularity
 
     return result
 
@@ -153,7 +190,7 @@ def _join_spotify_artists(data):
     return ", ".join([a.name for a in data.artists])
 
 
-def pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
+def _pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
     if not data:
         return None
 
@@ -163,12 +200,19 @@ def pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
     track.url = data.get_url()
 
     if data.get_album():
-        track._album = pack_lastfm_album(data.get_album())
+        track._album = _pack_lastfm_album(data.get_album())
 
     return track
 
 
-def pack_lastfm_album(data: pylast.Album) -> Optional[Album]:
+def _pack_lastfm_scrobble(data: pylast.Track) -> Optional[Scrobble]:
+    if not data:
+        return None
+
+    track = _pack_lastfm_track(data)
+
+
+def _pack_lastfm_album(data: pylast.Album) -> Optional[Album]:
     if not data:
         return None
 
@@ -181,7 +225,7 @@ def pack_lastfm_album(data: pylast.Album) -> Optional[Album]:
     return album
 
 
-def pack_spotify_activity(activity: discord.Spotify) -> Optional[Track]:
+def _pack_spotify_activity(activity: discord.Spotify) -> Optional[Track]:
     if not activity:
         return None
 

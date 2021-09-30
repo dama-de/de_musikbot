@@ -1,3 +1,6 @@
+import datetime
+
+
 class NamedBase:
     name: str = ""
 
@@ -50,6 +53,16 @@ class Track(NamedBase):
     @property
     def album(self):
         return self._album
+
+
+class Scrobble(Track):
+    user: str = None
+    live: bool = False
+    time_start: datetime.datetime = None
+    time_finish: datetime.datetime = None
+
+    def __init__(self, track: Track):
+        print(track)
 
 
 class Album(NamedBase):

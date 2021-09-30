@@ -1,14 +1,17 @@
 import asyncio
 import logging
+import os
 from typing import Optional
 
 import discord
 import pylast
 import tekore
 from discord.embeds import EmptyEmbed
-from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group
-from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
-from discord_slash.utils.manage_commands import create_option
+from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group, CommandInvokeError, CommandError
+
+if "SKIP_SLASH" not in os.environ:
+    from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
+    from discord_slash.utils.manage_commands import create_option
 
 from util import get_command
 from util.config import Config
@@ -22,6 +25,10 @@ slash_guilds = None
 _log = logging.getLogger(__name__)
 
 
+class NotRegisteredError(Exception):
+    pass
+
+
 class Music(Cog):
     def __init__(self, bot: Bot):
         self._bot = bot
@@ -30,26 +37,30 @@ class Music(Cog):
         self.data = self.config.data
 
         if not self.data:
-            self.data["names"] = {"132551667085344769": "dam4rusxp"}
+            self.data["names"] = {}
             self.config.save()
 
     def get_lastfm_user(self, user: discord.User) -> Optional[str]:
         if str(user.id) in self.data["names"]:
             return self.data["names"][str(user.id)]
-        return None
+        raise NotRegisteredError()
 
     async def reply_on_error(self, ctx, message: str):
-        if isinstance(ctx, SlashContext):
+        if "SKIP_SLASH" not in os.environ and isinstance(ctx, SlashContext):
             await ctx.send(message, hidden=True)
         else:
             await ctx.reply(message)
         return
 
-    async def cog_command_error(self, ctx, error):
+    async def cog_command_error(self, ctx, error: CommandError):
         """
         We use this method to handle the most common errors in the cog, so it doesn't have to be
         done for each command separately. It will be called automatically from discord.py.
         """
+        if isinstance(error, CommandInvokeError):
+            # Unpack the original error for further handling
+            error = error.original
+
         if isinstance(error, pylast.PyLastError):
             _log.warning("Last.fm did not respond on time.")
             await self.reply_on_error(
@@ -60,21 +71,22 @@ class Music(Cog):
             await self.reply_on_error(
                 ctx, "There was an error while communicating with the Spotify API, please try again later."
             )
+        elif isinstance(error, NotRegisteredError):
+            await self.reply_on_error(ctx, "You must register with `/last register` first.")
         else:
             _log.error("Unhandled error during command: " + get_command(ctx), exc_info=error)
-            await self.reply_on_error(
-                ctx, "There was an unknown error, please contact the bot owner."
-            )
+            await self.reply_on_error(ctx, "There was an unknown error, please contact the bot owner.")
 
-    @Cog.listener()
-    async def on_slash_command_error(self, ctx: SlashContext, error: Exception):
-        if isinstance(error, discord.NotFound) and error.code == 10062:
-            # NotFound with code 10062 means that the interaction timed out before we sent a response
-            _log.warning("Interaction timed out: " + get_command(ctx))
-            return
+    if "SKIP_SLASH" not in os.environ:
+        @Cog.listener()
+        async def on_slash_command_error(self, ctx: SlashContext, error: Exception):
+            if isinstance(error, discord.NotFound) and error.code == 10062:
+                # NotFound with code 10062 means that the interaction timed out before we sent a response
+                _log.warning("Interaction timed out: " + get_command(ctx))
+                return
 
-        # Forward the exception to the regular error handler
-        await self.cog_command_error(ctx, error)
+            # Forward the exception to the regular error handler
+            await self.cog_command_error(ctx, CommandInvokeError(error))
 
     # ---------- Regular commands ----------
     @group()
@@ -88,7 +100,7 @@ class Music(Cog):
         """Register your last.fm account with this bot."""
         self.data["names"][str(ctx.author.id)] = lastfm_name
         self.config.save()
-        if isinstance(ctx, SlashContext):
+        if "SKIP_SLASH" not in os.environ and isinstance(ctx, SlashContext):
             await ctx.send("Done.", hidden=True)
         else:
             await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
@@ -103,7 +115,7 @@ class Music(Cog):
         # Try to retrieve the user's activity
         activity = get_activity(ctx.author, "Spotify")
         if activity:
-            track.update(search.pack_spotify_activity(activity))
+            track.update(search._pack_spotify_activity(activity))
 
         if not activity:
             # Get current scrobble from last.fm, skip if activity was used
@@ -136,8 +148,7 @@ class Music(Cog):
     @last.command()
     async def recent(self, ctx):
         """Fetch your last scrobbles."""
-        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
-        recent_scrobbles = lfmuser.get_recent_tracks()
+        recent_scrobbles = await search.get_recent(self.get_lastfm_user(ctx.author))
 
         embed = discord.Embed(title="Recent scrobbles")
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
@@ -162,6 +173,7 @@ class Music(Cog):
         Time periods: all, 7d, 1m, 3m, 6m, 12m"""
         if period not in self.periods:
             await self.reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+            return
 
         lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
         top_tracks = lfmuser.get_top_tracks(period=self.periods[period], limit=10)
@@ -311,101 +323,102 @@ class Music(Cog):
         await ctx.send(embed=embed)
 
     # ---------- Slash Commands ----------
-    @cog_ext.cog_slash(name="album", description="Search for an album",
-                       options=[create_option(
-                           name="search_query", description="name of the album", required=False,
-                           option_type=SlashCommandOptionType.STRING)])
-    async def _album(self, ctx: SlashContext, search_query=""):
-        await ctx.defer()
-        await self.album(ctx, search_query=search_query)
+    if "SKIP_SLASH" not in os.environ:
+        @cog_ext.cog_slash(name="album", description="Search for an album",
+                           options=[create_option(
+                               name="search_query", description="name of the album", required=False,
+                               option_type=SlashCommandOptionType.STRING)])
+        async def _album(self, ctx: SlashContext, search_query=""):
+            await ctx.defer()
+            await self.album(ctx, search_query=search_query)
 
-    @cog_ext.cog_slash(name="artist", description="Search for an artist",
-                       options=[create_option(
-                           name="search_query", description="name of the artist", required=False,
-                           option_type=SlashCommandOptionType.STRING)])
-    async def _artist(self, ctx: SlashContext, search_query=""):
-        await ctx.defer()
-        await self.artist(ctx, search_query=search_query)
+        @cog_ext.cog_slash(name="artist", description="Search for an artist",
+                           options=[create_option(
+                               name="search_query", description="name of the artist", required=False,
+                               option_type=SlashCommandOptionType.STRING)])
+        async def _artist(self, ctx: SlashContext, search_query=""):
+            await ctx.defer()
+            await self.artist(ctx, search_query=search_query)
 
-    @cog_ext.cog_slash(name="track", description="Search for a track",
-                       options=[create_option(
-                           name="search_query", description="name of the track", required=False,
-                           option_type=SlashCommandOptionType.STRING)])
-    async def _track(self, ctx: SlashContext, search_query=""):
-        await ctx.defer()
-        await self.track(ctx, search_query=search_query)
+        @cog_ext.cog_slash(name="track", description="Search for a track",
+                           options=[create_option(
+                               name="search_query", description="name of the track", required=False,
+                               option_type=SlashCommandOptionType.STRING)])
+        async def _track(self, ctx: SlashContext, search_query=""):
+            await ctx.defer()
+            await self.track(ctx, search_query=search_query)
 
-    @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
-                            options=[create_option(
-                                name="lastfm_name", description="Your last.fm username", required=True,
-                                option_type=SlashCommandOptionType.STRING)])
-    async def _register(self, ctx: SlashContext, lastfm_name):
-        await self.register(ctx, lastfm_name)
+        @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
+                                options=[create_option(
+                                    name="lastfm_name", description="Your last.fm username", required=True,
+                                    option_type=SlashCommandOptionType.STRING)])
+        async def _register(self, ctx: SlashContext, lastfm_name):
+            await self.register(ctx, lastfm_name)
 
-    @cog_ext.cog_subcommand(base="last", name="now", description="Fetch the currently playing song",
-                            guild_ids=slash_guilds)
-    async def _now(self, ctx: SlashContext):
-        await ctx.defer()
-        await self.now(ctx)
+        @cog_ext.cog_subcommand(base="last", name="now", description="Fetch the currently playing song",
+                                guild_ids=slash_guilds)
+        async def _now(self, ctx: SlashContext):
+            await ctx.defer()
+            await self.now(ctx)
 
-    @cog_ext.cog_subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles",
-                            guild_ids=slash_guilds)
-    async def _recent(self, ctx: SlashContext):
-        await ctx.defer()
-        await self.recent(ctx)
+        @cog_ext.cog_subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles",
+                                guild_ids=slash_guilds)
+        async def _recent(self, ctx: SlashContext):
+            await ctx.defer()
+            await self.recent(ctx)
 
-    @cog_ext.cog_subcommand(base="last", name="artists", description="Fetch your most played artists",
-                            options=[create_option(
-                                name="period", description="Time period", required=False,
-                                option_type=SlashCommandOptionType.STRING,
-                                choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    async def _artists(self, ctx: SlashContext, period="all"):
-        await ctx.defer()
-        await self.artists(ctx, period)
+        @cog_ext.cog_subcommand(base="last", name="artists", description="Fetch your most played artists",
+                                options=[create_option(
+                                    name="period", description="Time period", required=False,
+                                    option_type=SlashCommandOptionType.STRING,
+                                    choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+        async def _artists(self, ctx: SlashContext, period="all"):
+            await ctx.defer()
+            await self.artists(ctx, period)
 
-    @cog_ext.cog_subcommand(base="last", name="albums", description="Fetch your most played albums",
-                            options=[create_option(
-                                name="period", description="Time period", required=False,
-                                option_type=SlashCommandOptionType.STRING,
-                                choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    async def _albums(self, ctx: SlashContext, period="all"):
-        await ctx.defer()
-        await self.albums(ctx, period)
+        @cog_ext.cog_subcommand(base="last", name="albums", description="Fetch your most played albums",
+                                options=[create_option(
+                                    name="period", description="Time period", required=False,
+                                    option_type=SlashCommandOptionType.STRING,
+                                    choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+        async def _albums(self, ctx: SlashContext, period="all"):
+            await ctx.defer()
+            await self.albums(ctx, period)
 
-    @cog_ext.cog_subcommand(base="last", name="tracks", description="Fetch your most played tracks",
-                            options=[create_option(
-                                name="period", description="Time period", required=False,
-                                option_type=SlashCommandOptionType.STRING,
-                                choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    async def _tracks(self, ctx: SlashContext, period="all"):
-        await ctx.defer()
-        await self.tracks(ctx, period)
+        @cog_ext.cog_subcommand(base="last", name="tracks", description="Fetch your most played tracks",
+                                options=[create_option(
+                                    name="period", description="Time period", required=False,
+                                    option_type=SlashCommandOptionType.STRING,
+                                    choices=["all", "7d", "1m", "3m", "6m", "12m"])])
+        async def _tracks(self, ctx: SlashContext, period="all"):
+            await ctx.defer()
+            await self.tracks(ctx, period)
 
-    @cog_ext.cog_slash(name="lyricsgenius",
-                       description="Search for a Genius page, or get the page of the Song your're listening to",
-                       guild_ids=slash_guilds,
-                       options=[create_option(
-                           name="search_query", description="Title and artist of the song", required=False,
-                           option_type=SlashCommandOptionType.STRING
-                       )])
-    async def _lyrics(self, ctx: SlashContext, search_query=None):
-        await ctx.defer()
+        @cog_ext.cog_slash(name="lyricsgenius",
+                           description="Search for a Genius page, or get the page of the Song your're listening to",
+                           guild_ids=slash_guilds,
+                           options=[create_option(
+                               name="search_query", description="Title and artist of the song", required=False,
+                               option_type=SlashCommandOptionType.STRING
+                           )])
+        async def _lyrics(self, ctx: SlashContext, search_query=None):
+            await ctx.defer()
 
-        # Use the current scrobble if no search was submitted
-        if not search_query:
-            scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
-            if not scrobble:
-                await self.reply_on_error(ctx, "Nothing is currently scrobbling.")
+            # Use the current scrobble if no search was submitted
+            if not search_query:
+                scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
+                if not scrobble:
+                    await self.reply_on_error(ctx, "Nothing is currently scrobbling.")
+                    return
+                search_query = f"{scrobble.name} {scrobble.artist.name}"
+
+            song = await asyncio.to_thread(genius.search_song, title=search_query, get_full_info=False)
+
+            if not song:
+                await self.reply_on_error(ctx, f"Could not find '{search_query}' on Genius.")
                 return
-            search_query = f"{scrobble.name} {scrobble.artist.name}"
 
-        song = await asyncio.to_thread(genius.search_song, title=search_query, get_full_info=False)
-
-        if not song:
-            await self.reply_on_error(ctx, f"Could not find '{search_query}' on Genius.")
-            return
-
-        embed = discord.Embed(title='Genius Lyrics')
-        embed.add_field(name='Link', value=str(song.url))
-        embed.set_thumbnail(url=song.header_image_url)
-        await ctx.send(embed=embed)
+            embed = discord.Embed(title='Genius Lyrics')
+            embed.add_field(name='Link', value=str(song.url))
+            embed.set_thumbnail(url=song.header_image_url)
+            await ctx.send(embed=embed)

@@ -4,18 +4,23 @@ import os
 from discord import Intents
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context
-from discord_slash import SlashCommand
 from dotenv import load_dotenv
 
 log = logging.getLogger(__name__)
 
 
 class DamaBot(commands.Bot):
-    slash: SlashCommand
+    slash: None  # type: discord_slash.SlashCommand
 
     def __init__(self, **kwargs):
+        # Init client with all intents enabled
+        kwargs["intents"] = Intents.all()
         super().__init__(command_prefix=os.environ["PREFIX"], **kwargs)
-        SlashCommand(self)
+
+        if "SKIP_SLASH" not in os.environ:
+            from discord_slash import SlashCommand
+            SlashCommand(self)
+
         self.load_extension("cogs.admin")
         self.load_extension("cogs.music")
         # self.load_extension("cogs.scrobble")
@@ -27,8 +32,10 @@ class DamaBot(commands.Bot):
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send("Missing argument '" + error.param.name + "'")
             return
-
-        log.error(f"Error during command: {ctx.message.clean_content}", exc_info=error)
+        elif isinstance(error, CommandError):
+            log.warning("Passing CommandError")
+        else:
+            log.error(f"Error during command: {ctx.message.clean_content}", exc_info=error)
 
 
 def main():
@@ -36,12 +43,7 @@ def main():
 
     setup_logging()
 
-    # Extended intents are needed for retrieving user activities (Spotify)
-    intents = Intents.default()
-    intents.members = True
-    intents.presences = True
-    bot = DamaBot(intents=intents)
-
+    bot = DamaBot()
     bot.run(os.environ["DISCORD_TOKEN"])
 
 
