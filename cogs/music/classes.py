@@ -1,5 +1,5 @@
 class NamedBase:
-    name: str
+    name: str = None
 
     def __bool__(self):
         return bool(self.name)
