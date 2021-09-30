@@ -6,11 +6,11 @@ import discord
 import pylast
 import tekore
 from discord.embeds import EmptyEmbed
-from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group
+from discord.ext.commands import MissingRequiredArgument, Bot, Cog
 from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
 
-from util import auto_defer, get_command
+from util import get_command
 from util.config import Config
 from . import search
 from .classes import Album, Artist
@@ -76,65 +76,6 @@ class Music(Cog):
         # Forward the exception to the regular error handler
         await self.cog_command_error(ctx, error)
 
-    # ---------- Regular commands ----------
-    @group()
-    async def last(self, ctx):
-        """last.fm command category"""
-        if not ctx.invoked_subcommand:
-            await ctx.send("Try `{}help`".format(ctx.prefix))
-
-    @last.command()
-    async def register(self, ctx, lastfm_name: str):
-        """Register your last.fm account with this bot."""
-        self.data["names"][str(ctx.author.id)] = lastfm_name
-        self.config.save()
-        if isinstance(ctx, SlashContext):
-            await ctx.send("Done.", hidden=True)
-        else:
-            await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
-
-    @last.command()
-    async def now(self, ctx):
-        """Fetch the currently playing song."""
-        author = ctx.author.display_name
-
-        # Caching this reduces request count
-        track = await search.get_scrobble(self.get_lastfm_user(ctx.author))
-        if not track:
-            await self.reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
-            return
-
-        # Try to enhance with Spotify data
-        sp_result = await search.search_spotify_track(" ".join([track.artist.name, track.name, track.album.name]))
-        if sp_result:
-            track.update(sp_result)
-
-        embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
-        embed.set_author(name=author, icon_url=ctx.author.avatar_url)
-        embed.set_footer(text="Now scrobbling on last.fm")
-        embed.set_thumbnail(url=getattr(track.album, "img_url", EmptyEmbed))
-
-        # If an album date exists, mention the year in the description, else suppress
-        formatted_year = f" ({track.album.date[:4]})" if hasattr(track.album, "date") else ""
-        embed.description = getattr(track.album, 'name', '') + formatted_year
-
-        await ctx.send(embed=embed)
-
-    @last.command()
-    async def recent(self, ctx):
-        """Fetch your last scrobbles."""
-        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
-        recent_scrobbles = lfmuser.get_recent_tracks()
-
-        embed = discord.Embed(title="Recent scrobbles")
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-        for i in range(len(recent_scrobbles)):
-            scrobble = recent_scrobbles[i]
-            embed.add_field(name=scrobble.track.title, value=scrobble.track.artist.name)
-
-        await ctx.send(embed=embed)
-
     # Constants for markdown table generation
     periods = {"all": pylast.PERIOD_OVERALL,
                "7d": pylast.PERIOD_7DAYS,
@@ -143,84 +84,14 @@ class Music(Cog):
                "6m": pylast.PERIOD_6MONTHS,
                "12m": pylast.PERIOD_12MONTHS}
 
-    @last.command()
-    async def tracks(self, ctx, period="all"):
-        """Fetch your most played tracks.
-        Time periods: all, 7d, 1m, 3m, 6m, 12m"""
-        if period not in self.periods:
-            await self.reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+    # ---------- Slash Commands ----------
+    @cog_ext.cog_slash(name="album", description="Search for an album",
+                       options=[create_option(
+                           name="search_query", description="name of the album", required=False,
+                           option_type=SlashCommandOptionType.STRING)])
+    async def album(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
 
-        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
-        top_tracks = lfmuser.get_top_tracks(period=self.periods[period], limit=10)
-
-        cols = {
-            "No": range(1, len(top_tracks) + 1),
-            "Artist": [t.item.artist.name for t in top_tracks],
-            "Title": [t.item.title for t in top_tracks],
-            "Scr.": [t.weight for t in top_tracks]
-        }
-
-        embed = discord.Embed(title="Top tracks (" + period + ")")
-        embed.description = make_table(tbl_format, cols)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-        await ctx.send(embed=embed)
-
-    @last.command()
-    async def albums(self, ctx, period="all"):
-        """Fetch your most played albums.
-        Time periods: all, 7d, 1m, 3m, 6m, 12m"""
-        if period not in self.periods:
-            await self.reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
-
-        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
-        top_albums = lfmuser.get_top_albums(period=self.periods[period], limit=10)
-
-        cols = {
-            "No": range(1, len(top_albums) + 1),
-            "Artist": [t.item.artist.name for t in top_albums],
-            "Album": [t.item.title for t in top_albums],
-            "Scr.": [t.weight for t in top_albums]
-        }
-
-        embed = discord.Embed(title="Top albums (" + period + ")")
-        embed.description = make_table(tbl_format, cols)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-        await ctx.send(embed=embed)
-
-    @last.command()
-    async def artists(self, ctx, period="all"):
-        """Fetch your most played artists.
-        Time periods: all, 7d, 1m, 3m, 6m, 12m"""
-        if period not in self.periods:
-            await self.reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
-
-        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
-        top_artists = lfmuser.get_top_artists(period=self.periods[period], limit=10)
-
-        cols = {
-            "No": range(1, len(top_artists) + 1),
-            "Artist": [t.item.name for t in top_artists],
-            "Scr.": [t.weight for t in top_artists]
-        }
-
-        embed = discord.Embed(title="Top artists (" + period + ")")
-        embed.description = make_table(tbl_artist_format, cols)
-        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
-
-        await ctx.send(embed=embed)
-
-    @command()
-    async def track(self, ctx, *, search_query: str):
-        """Search for a single track"""
-        result = await search.search_spotify_track(search_query)
-        url = result.url
-        await ctx.send(url)
-
-    @command()
-    async def album(self, ctx, *, search_query=""):
-        """Search for an album"""
         urls = dict()
         album = Album()
 
@@ -260,9 +131,13 @@ class Music(Cog):
 
         await ctx.send(embed=embed)
 
-    @command()
-    async def artist(self, ctx, *, search_query=""):
-        """Search for an artist"""
+    @cog_ext.cog_slash(name="artist", description="Search for an artist",
+                       options=[create_option(
+                           name="search_query", description="name of the artist", required=False,
+                           option_type=SlashCommandOptionType.STRING)])
+    async def artist(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
+
         urls = dict()
         artist = Artist()
 
@@ -297,76 +172,151 @@ class Music(Cog):
 
         await ctx.send(embed=embed)
 
-    # ---------- Slash Commands ----------
-    @cog_ext.cog_slash(name="album", description="Search for an album",
-                       options=[create_option(
-                           name="search_query", description="name of the album", required=False,
-                           option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
-    async def _album(self, ctx: SlashContext, search_query=""):
-        await self.album(ctx, search_query=search_query)
-
-    @cog_ext.cog_slash(name="artist", description="Search for an artist",
-                       options=[create_option(
-                           name="search_query", description="name of the artist", required=False,
-                           option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
-    async def _artist(self, ctx: SlashContext, search_query=""):
-        await self.artist(ctx, search_query=search_query)
-
     @cog_ext.cog_slash(name="track", description="Search for a track",
                        options=[create_option(
                            name="search_query", description="name of the track", required=False,
                            option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
-    async def _track(self, ctx: SlashContext, search_query=""):
-        await self.track(ctx, search_query=search_query)
+    async def track(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
+
+        result = await search.search_spotify_track(search_query)
+        url = result.url
+        await ctx.send(url)
 
     @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
                             options=[create_option(
                                 name="lastfm_name", description="Your last.fm username", required=True,
                                 option_type=SlashCommandOptionType.STRING)])
-    async def _register(self, ctx: SlashContext, lastfm_name):
-        await self.register(ctx, lastfm_name)
+    async def register(self, ctx: SlashContext, lastfm_name):
+        self.data["names"][str(ctx.author.id)] = lastfm_name
+        self.config.save()
+        await ctx.send("Done.", hidden=True)
 
     @cog_ext.cog_subcommand(base="last", name="now", description="Fetch the currently playing song",
                             guild_ids=slash_guilds)
-    @auto_defer
-    async def _now(self, ctx: SlashContext):
-        await self.now(ctx)
+    async def now(self, ctx: SlashContext):
+        await ctx.defer()
+
+        author = ctx.author.display_name
+
+        # Caching this reduces request count
+        track = await search.get_scrobble(self.get_lastfm_user(ctx.author))
+        if not track:
+            await self.reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
+            return
+
+        # Try to enhance with Spotify data
+        sp_result = await search.search_spotify_track(" ".join([track.artist.name, track.name, track.album.name]))
+        if sp_result:
+            track.update(sp_result)
+
+        embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
+        embed.set_author(name=author, icon_url=ctx.author.avatar_url)
+        embed.set_footer(text="Now scrobbling on last.fm")
+        embed.set_thumbnail(url=getattr(track.album, "img_url", EmptyEmbed))
+
+        # If an album date exists, mention the year in the description, else suppress
+        formatted_year = f" ({track.album.date[:4]})" if hasattr(track.album, "date") else ""
+        embed.description = getattr(track.album, 'name', '') + formatted_year
+
+        await ctx.send(embed=embed)
 
     @cog_ext.cog_subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles",
                             guild_ids=slash_guilds)
-    @auto_defer
-    async def _recent(self, ctx: SlashContext):
-        await self.recent(ctx)
+    async def recent(self, ctx: SlashContext):
+        await ctx.defer()
+
+        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
+        recent_scrobbles = lfmuser.get_recent_tracks()
+
+        embed = discord.Embed(title="Recent scrobbles")
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+        for i in range(len(recent_scrobbles)):
+            scrobble = recent_scrobbles[i]
+            embed.add_field(name=scrobble.track.title, value=scrobble.track.artist.name)
+
+        await ctx.send(embed=embed)
 
     @cog_ext.cog_subcommand(base="last", name="artists", description="Fetch your most played artists",
                             options=[create_option(
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
-    async def _artists(self, ctx: SlashContext, period="all"):
-        await self.artists(ctx, period)
+    async def artists(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
+
+        if period not in self.periods:
+            await self.reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+
+        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
+        top_artists = lfmuser.get_top_artists(period=self.periods[period], limit=10)
+
+        cols = {
+            "No": range(1, len(top_artists) + 1),
+            "Artist": [t.item.name for t in top_artists],
+            "Scr.": [t.weight for t in top_artists]
+        }
+
+        embed = discord.Embed(title="Top artists (" + period + ")")
+        embed.description = make_table(tbl_artist_format, cols)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
 
     @cog_ext.cog_subcommand(base="last", name="albums", description="Fetch your most played albums",
                             options=[create_option(
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
-    async def _albums(self, ctx: SlashContext, period="all"):
-        await self.albums(ctx, period)
+    async def albums(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
+
+        if period not in self.periods:
+            await self.reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+
+        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
+        top_albums = lfmuser.get_top_albums(period=self.periods[period], limit=10)
+
+        cols = {
+            "No": range(1, len(top_albums) + 1),
+            "Artist": [t.item.artist.name for t in top_albums],
+            "Album": [t.item.title for t in top_albums],
+            "Scr.": [t.weight for t in top_albums]
+        }
+
+        embed = discord.Embed(title="Top albums (" + period + ")")
+        embed.description = make_table(tbl_format, cols)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
 
     @cog_ext.cog_subcommand(base="last", name="tracks", description="Fetch your most played tracks",
                             options=[create_option(
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
-    async def _tracks(self, ctx: SlashContext, period="all"):
-        await self.tracks(ctx, period)
+    async def tracks(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
+
+        if period not in self.periods:
+            await self.reply_on_error(ctx, "Unknown time-period. Possible values: all, 7d, 1m, 3m, 6m, 12m")
+
+        lfmuser = lastfm_net.get_user(self.get_lastfm_user(ctx.author))
+        top_tracks = lfmuser.get_top_tracks(period=self.periods[period], limit=10)
+
+        cols = {
+            "No": range(1, len(top_tracks) + 1),
+            "Artist": [t.item.artist.name for t in top_tracks],
+            "Title": [t.item.title for t in top_tracks],
+            "Scr.": [t.weight for t in top_tracks]
+        }
+
+        embed = discord.Embed(title="Top tracks (" + period + ")")
+        embed.description = make_table(tbl_format, cols)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+
+        await ctx.send(embed=embed)
 
     @cog_ext.cog_slash(name="lyricsgenius",
                        description="Search for a Genius page, or get the page of the Song your're listening to",
@@ -375,8 +325,9 @@ class Music(Cog):
                            name="search_query", description="Title and artist of the song", required=False,
                            option_type=SlashCommandOptionType.STRING
                        )])
-    @auto_defer
-    async def _lyrics(self, ctx: SlashContext, search_query=None):
+    async def lyrics(self, ctx: SlashContext, search_query=None):
+        await ctx.defer()
+
         # Use the current scrobble if no search was submitted
         if not search_query:
             scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
