@@ -5,14 +5,15 @@ from typing import Optional
 import discord
 import pylast
 import tekore
+from discord.embeds import EmptyEmbed
 from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group
-from discord.utils import find
 from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
 
 from util import auto_defer, get_command
 from util.config import Config
 from . import search
+from .classes import Album, Artist
 from .search import lastfm_net, genius
 from .util import rym_search, mklinks
 
@@ -103,23 +104,20 @@ class Music(Cog):
             await self.reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
             return
 
+        # Try to enhance with Spotify data
+        sp_result = await search.search_spotify_track(" ".join([track.artist.name, track.name, track.album.name]))
+        if sp_result:
+            track.update(sp_result)
+
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name))
         embed.set_author(name=author, icon_url=ctx.author.avatar_url)
         embed.set_footer(text="Now scrobbling on last.fm")
         embed.url = track.url
+        embed.set_thumbnail(url=getattr(track.album, "img_url", EmptyEmbed))
 
-        if track.album:
-            embed.description = track.album.name
-
-        if track.album.img_url:
-            embed.set_thumbnail(url=track.album.img_url)
-
-        # Try to enhance with Spotify data
-        sp_result = await search.search_spotify_track(" ".join([track.artist.name, track.name, track.album.name]))
-        if sp_result:
-            embed.url = sp_result.url
-            embed.set_thumbnail(url=sp_result.album.img_url)
-            embed.description = "{} ({})".format(track.album.name, sp_result.album.date[:4])
+        # If an album date exists, mention the year in the description, else suppress
+        formatted_year = f" ({track.album.date[:4]})" if hasattr(track.album, "date") else ""
+        embed.description = getattr(track.album, 'name', '') + formatted_year
 
         await ctx.send(embed=embed)
 
@@ -244,7 +242,10 @@ class Music(Cog):
     async def album(self, ctx, *, search_query=""):
         """Search for an album"""
         urls = dict()
+        album = Album()
 
+        # If no search query was supplied, try to fetch an album from the current scrobble,
+        # and build the search from its artist and title
         last_album = None
         if not search_query and self.get_lastfm_user(ctx.author):
             scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
@@ -257,32 +258,25 @@ class Music(Cog):
 
         if not last_album:
             last_album = await search.search_lastfm_album(search_query)
-
-        spotify_album = await search.search_spotify_album(search_query, extended=True)
-
-        if not spotify_album:
-            name = last_album.name
-            artist_name = last_album.artist.name
-            img_url = last_album.img_url
-            url = last_album.url
-            metrics = ""
-        else:
-            name = spotify_album.name
-            artist_name = spotify_album.artist.name
-            img_url = spotify_album.img_url
-            url = spotify_album.url
-            urls["Spotify"] = url
-            year = spotify_album.date[:4]
-            minutes = int(spotify_album.length / 60_000)
-            metrics = f"\n{year} • {spotify_album.tracks} songs, {minutes} min"
-
-        urls["RYM"] = rym_search(name, searchtype="l")
+        album.update(last_album)
         urls["Last.fm"] = last_album.url
 
-        description = f"*{artist_name}*{metrics}\n\n{mklinks(urls)}"
+        spotify_album = await search.search_spotify_album(search_query, extended=True)
+        if spotify_album:
+            album.update(spotify_album)
+            urls["Spotify"] = spotify_album.url
 
-        embed = discord.Embed(title=name, description=description, url=url)
-        embed.set_thumbnail(url=img_url)
+        metrics = ""
+        if hasattr(album, "date"):
+            year = album.date[:4]
+            minutes = int(album.length / 60_000)
+            metrics = f"\n{year} • {album.tracks} songs, {minutes} min"
+
+        urls["RYM"] = rym_search(album.name, searchtype="l")
+        description = f"*{album.artist.name}*{metrics}\n\n{mklinks(urls)}"
+
+        embed = discord.Embed(title=album.name, description=description, url=album.url)
+        embed.set_thumbnail(url=getattr(album, "img_url", EmptyEmbed))
 
         await ctx.send(embed=embed)
 
@@ -290,7 +284,9 @@ class Music(Cog):
     async def artist(self, ctx, *, search_query=""):
         """Search for an artist"""
         urls = dict()
+        artist = Artist()
 
+        # If no search query was supplied, get the artist from the current scrobble and use its name as search
         if not search_query and self.get_lastfm_user(ctx.author):
             scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
             if scrobble:
@@ -305,23 +301,21 @@ class Music(Cog):
             last_result = await search.search_lastfm_artist(search_query[1:-1], exact=True)
         else:
             last_result = await search.search_lastfm_artist(search_query)
-
-        embed = discord.Embed()
-        embed.title = last_result.name
-        description = "{}\n\nTop Tags: {}".format(last_result.bio, last_result.tags)
+        artist.update(last_result)
+        urls["Last.fm"] = last_result.url
 
         sp_result = await search.search_spotify_artist(last_result.name)
         if sp_result:
+            artist.update(sp_result)
             urls["Spotify"] = sp_result.url
-            embed.set_thumbnail(url=sp_result.img_url)
 
-        urls["Last.fm"] = last_result.url
-        urls["RYM"] = rym_search(last_result.name, searchtype="a")
+        urls["RYM"] = rym_search(artist.name, searchtype="a")
 
-        description += f"\n\n{mklinks(urls)}"
-        chosenkey = find(lambda key: key in urls, ["Spotify", "Last.fm", "RYM"])
-        embed.url = urls[chosenkey]
-        embed.description = description
+        embed = discord.Embed()
+        embed.title = artist.name
+        embed.set_thumbnail(url=getattr(artist, "img_url", EmptyEmbed))
+        embed.url = artist.url
+        embed.description = f"{artist.bio}\n\nTop Tags: {artist.tags}\n\n{mklinks(urls)}"
 
         await ctx.send(embed=embed)
 

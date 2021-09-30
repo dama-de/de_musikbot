@@ -1,5 +1,5 @@
 class NamedBase:
-    __slots__ = ("name",)
+    name: str
 
     def __bool__(self):
         return bool(self.name)
@@ -7,13 +7,31 @@ class NamedBase:
     def __str__(self):
         return self.name
 
+    def update(self, data):
+        for key in data.__dict__:
+            value = getattr(data, key)
+
+            if not value:
+                continue
+
+            if isinstance(value, NamedBase):
+                getattr(self, key).update(value)
+            else:
+                setattr(self, key, value)
+
 
 class Artist(NamedBase):
-    __slots__ = ("bio", "url", "img_url", "tags", "popularity", "spotify_id")
+    bio: str
+    url: str
+    img_url: str
+    tags: str
+    popularity: int
 
 
 class Track(NamedBase):
-    __slots__ = ("_artist", "_album", "length", "url", "popularity", "spotify_id")
+    length: int
+    url: str
+    popularity: int
 
     def __init__(self):
         self._artist = Artist()
@@ -29,7 +47,12 @@ class Track(NamedBase):
 
 
 class Album(NamedBase):
-    __slots__ = ("_artist", "date", "tracks", "length", "url", "img_url", "popularity")
+    date: str
+    tracks: int
+    length: int
+    url: str
+    img_url: str
+    popularity: int
 
     def __init__(self):
         self._artist = Artist()
