@@ -112,11 +112,11 @@ class Music(Cog):
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
         embed.set_author(name=author, icon_url=ctx.author.avatar_url)
         embed.set_footer(text="Now scrobbling on last.fm")
-        embed.set_thumbnail(url=getattr(track.album, "img_url", EmptyEmbed))
+        embed.set_thumbnail(url=track.album.img_url or EmptyEmbed)
 
         # If an album date exists, mention the year in the description, else suppress
-        formatted_year = f" ({track.album.date[:4]})" if hasattr(track.album, "date") else ""
-        embed.description = getattr(track.album, 'name', '') + formatted_year
+        formatted_year = f" ({track.album.date[:4]})" if track.album.date else ""
+        embed.description = track.album.name + formatted_year
 
         await ctx.send(embed=embed)
 
@@ -247,7 +247,7 @@ class Music(Cog):
             urls["Spotify"] = spotify_album.url
 
         metrics = ""
-        if hasattr(album, "date"):
+        if album.date:
             year = album.date[:4]
             minutes = int(album.length / 60_000)
             metrics = f"\n{year} • {album.tracks} songs, {minutes} min"
@@ -256,7 +256,7 @@ class Music(Cog):
         description = f"*{album.artist.name}*{metrics}\n\n{mklinks(urls)}"
 
         embed = discord.Embed(title=album.name, description=description, url=album.url)
-        embed.set_thumbnail(url=getattr(album, "img_url", EmptyEmbed))
+        embed.set_thumbnail(url=album.img_url or EmptyEmbed)
 
         await ctx.send(embed=embed)
 
@@ -292,7 +292,7 @@ class Music(Cog):
         urls["RYM"] = rym_search(artist.name, searchtype="a")
 
         embed = discord.Embed(title=artist.name, url=artist.url)
-        embed.set_thumbnail(url=getattr(artist, "img_url", EmptyEmbed))
+        embed.set_thumbnail(url=artist.img_url or EmptyEmbed)
         embed.description = f"{artist.bio}\n\nTop Tags: {artist.tags}\n\n{mklinks(urls)}"
 
         await ctx.send(embed=embed)

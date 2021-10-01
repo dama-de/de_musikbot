@@ -21,17 +21,17 @@ class NamedBase:
 
 
 class Artist(NamedBase):
-    bio: str
-    url: str
-    img_url: str
-    tags: str
-    popularity: int
+    bio: str = None
+    url: str = None
+    img_url: str = None
+    tags: str = None
+    popularity: int = None
 
 
 class Track(NamedBase):
-    length: int
-    url: str
-    popularity: int
+    length: int = None
+    url: str = None
+    popularity: int = None
 
     def __init__(self):
         self._artist = Artist()
@@ -47,12 +47,12 @@ class Track(NamedBase):
 
 
 class Album(NamedBase):
-    date: str
-    tracks: int
-    length: int
-    url: str
-    img_url: str
-    popularity: int
+    date: str = None
+    tracks: int = None
+    length: int = None
+    url: str = None
+    img_url: str = None
+    popularity: int = None
 
     def __init__(self):
         self._artist = Artist()
