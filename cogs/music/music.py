@@ -10,7 +10,7 @@ from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, gro
 from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
 
-from util import auto_defer, get_command
+from util import get_command
 from util.config import Config
 from . import search
 from .classes import Album, Artist
@@ -302,24 +302,24 @@ class Music(Cog):
                        options=[create_option(
                            name="search_query", description="name of the album", required=False,
                            option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
     async def _album(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
         await self.album(ctx, search_query=search_query)
 
     @cog_ext.cog_slash(name="artist", description="Search for an artist",
                        options=[create_option(
                            name="search_query", description="name of the artist", required=False,
                            option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
     async def _artist(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
         await self.artist(ctx, search_query=search_query)
 
     @cog_ext.cog_slash(name="track", description="Search for a track",
                        options=[create_option(
                            name="search_query", description="name of the track", required=False,
                            option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
     async def _track(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
         await self.track(ctx, search_query=search_query)
 
     @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
@@ -331,14 +331,14 @@ class Music(Cog):
 
     @cog_ext.cog_subcommand(base="last", name="now", description="Fetch the currently playing song",
                             guild_ids=slash_guilds)
-    @auto_defer
     async def _now(self, ctx: SlashContext):
+        await ctx.defer()
         await self.now(ctx)
 
     @cog_ext.cog_subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles",
                             guild_ids=slash_guilds)
-    @auto_defer
     async def _recent(self, ctx: SlashContext):
+        await ctx.defer()
         await self.recent(ctx)
 
     @cog_ext.cog_subcommand(base="last", name="artists", description="Fetch your most played artists",
@@ -346,8 +346,8 @@ class Music(Cog):
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
     async def _artists(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
         await self.artists(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="albums", description="Fetch your most played albums",
@@ -355,8 +355,8 @@ class Music(Cog):
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
     async def _albums(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
         await self.albums(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="tracks", description="Fetch your most played tracks",
@@ -364,8 +364,8 @@ class Music(Cog):
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
     async def _tracks(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
         await self.tracks(ctx, period)
 
     @cog_ext.cog_slash(name="lyricsgenius",
@@ -375,8 +375,9 @@ class Music(Cog):
                            name="search_query", description="Title and artist of the song", required=False,
                            option_type=SlashCommandOptionType.STRING
                        )])
-    @auto_defer
     async def _lyrics(self, ctx: SlashContext, search_query=None):
+        await ctx.defer()
+
         # Use the current scrobble if no search was submitted
         if not search_query:
             scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
