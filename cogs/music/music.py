@@ -10,7 +10,7 @@ from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, gro
 from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
 from discord_slash.utils.manage_commands import create_option
 
-from util import auto_defer, get_command
+from util import get_command
 from util.config import Config
 from . import search
 from .classes import Album, Artist
@@ -112,11 +112,11 @@ class Music(Cog):
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
         embed.set_author(name=author, icon_url=ctx.author.avatar_url)
         embed.set_footer(text="Now scrobbling on last.fm")
-        embed.set_thumbnail(url=getattr(track.album, "img_url", EmptyEmbed))
+        embed.set_thumbnail(url=track.album.img_url or EmptyEmbed)
 
         # If an album date exists, mention the year in the description, else suppress
-        formatted_year = f" ({track.album.date[:4]})" if hasattr(track.album, "date") else ""
-        embed.description = getattr(track.album, 'name', '') + formatted_year
+        formatted_year = f" ({track.album.date[:4]})" if track.album.date else ""
+        embed.description = track.album.name + formatted_year
 
         await ctx.send(embed=embed)
 
@@ -247,7 +247,7 @@ class Music(Cog):
             urls["Spotify"] = spotify_album.url
 
         metrics = ""
-        if hasattr(album, "date"):
+        if album.date:
             year = album.date[:4]
             minutes = int(album.length / 60_000)
             metrics = f"\n{year} • {album.tracks} songs, {minutes} min"
@@ -256,7 +256,7 @@ class Music(Cog):
         description = f"*{album.artist.name}*{metrics}\n\n{mklinks(urls)}"
 
         embed = discord.Embed(title=album.name, description=description, url=album.url)
-        embed.set_thumbnail(url=getattr(album, "img_url", EmptyEmbed))
+        embed.set_thumbnail(url=album.img_url or EmptyEmbed)
 
         await ctx.send(embed=embed)
 
@@ -292,7 +292,7 @@ class Music(Cog):
         urls["RYM"] = rym_search(artist.name, searchtype="a")
 
         embed = discord.Embed(title=artist.name, url=artist.url)
-        embed.set_thumbnail(url=getattr(artist, "img_url", EmptyEmbed))
+        embed.set_thumbnail(url=artist.img_url or EmptyEmbed)
         embed.description = f"{artist.bio}\n\nTop Tags: {artist.tags}\n\n{mklinks(urls)}"
 
         await ctx.send(embed=embed)
@@ -302,24 +302,24 @@ class Music(Cog):
                        options=[create_option(
                            name="search_query", description="name of the album", required=False,
                            option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
     async def _album(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
         await self.album(ctx, search_query=search_query)
 
     @cog_ext.cog_slash(name="artist", description="Search for an artist",
                        options=[create_option(
                            name="search_query", description="name of the artist", required=False,
                            option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
     async def _artist(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
         await self.artist(ctx, search_query=search_query)
 
     @cog_ext.cog_slash(name="track", description="Search for a track",
                        options=[create_option(
                            name="search_query", description="name of the track", required=False,
                            option_type=SlashCommandOptionType.STRING)])
-    @auto_defer
     async def _track(self, ctx: SlashContext, search_query=""):
+        await ctx.defer()
         await self.track(ctx, search_query=search_query)
 
     @cog_ext.cog_subcommand(base="last", name="register", description="Register your last.fm account with the bot",
@@ -331,14 +331,14 @@ class Music(Cog):
 
     @cog_ext.cog_subcommand(base="last", name="now", description="Fetch the currently playing song",
                             guild_ids=slash_guilds)
-    @auto_defer
     async def _now(self, ctx: SlashContext):
+        await ctx.defer()
         await self.now(ctx)
 
     @cog_ext.cog_subcommand(base="last", name="recent", description="Fetch your last 10 scrobbles",
                             guild_ids=slash_guilds)
-    @auto_defer
     async def _recent(self, ctx: SlashContext):
+        await ctx.defer()
         await self.recent(ctx)
 
     @cog_ext.cog_subcommand(base="last", name="artists", description="Fetch your most played artists",
@@ -346,8 +346,8 @@ class Music(Cog):
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
     async def _artists(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
         await self.artists(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="albums", description="Fetch your most played albums",
@@ -355,8 +355,8 @@ class Music(Cog):
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
     async def _albums(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
         await self.albums(ctx, period)
 
     @cog_ext.cog_subcommand(base="last", name="tracks", description="Fetch your most played tracks",
@@ -364,8 +364,8 @@ class Music(Cog):
                                 name="period", description="Time period", required=False,
                                 option_type=SlashCommandOptionType.STRING,
                                 choices=["all", "7d", "1m", "3m", "6m", "12m"])])
-    @auto_defer
     async def _tracks(self, ctx: SlashContext, period="all"):
+        await ctx.defer()
         await self.tracks(ctx, period)
 
     @cog_ext.cog_slash(name="lyricsgenius",
@@ -375,8 +375,9 @@ class Music(Cog):
                            name="search_query", description="Title and artist of the song", required=False,
                            option_type=SlashCommandOptionType.STRING
                        )])
-    @auto_defer
     async def _lyrics(self, ctx: SlashContext, search_query=None):
+        await ctx.defer()
+
         # Use the current scrobble if no search was submitted
         if not search_query:
             scrobble = await search.get_scrobble(self.get_lastfm_user(ctx.author))
