@@ -98,14 +98,15 @@ class Music(Cog):
         """Fetch the currently playing song."""
         author = ctx.author.display_name
 
-        # Caching this reduces request count
         track = await search.get_scrobble(self.get_lastfm_user(ctx.author))
         if not track:
             await self.reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
             return
 
         # Try to enhance with Spotify data
-        sp_result = await search.search_spotify_track(" ".join([track.artist.name, track.name, track.album.name]))
+        sp_query = f"track:{track.name} artist:{track.artist.name}"
+        sp_query += f" album:{track.album.name}" if track.album else ""
+        sp_result = await search.search_spotify_track(sp_query)
         if sp_result:
             track.update(sp_result)
 
