@@ -17,6 +17,7 @@ def mklinks(urls: dict) -> str:
     return result
 
 
+# Constants for markdown table generation
 col1_width = 22
 col2_width = 22
 

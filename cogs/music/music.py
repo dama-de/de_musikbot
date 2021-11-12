@@ -135,7 +135,7 @@ class Music(Cog):
 
         await ctx.send(embed=embed)
 
-    # Constants for markdown table generation
+    # Possible chart timeframes
     periods = {"all": pylast.PERIOD_OVERALL,
                "7d": pylast.PERIOD_7DAYS,
                "1m": pylast.PERIOD_1MONTH,
