@@ -18,6 +18,7 @@ class DamaBot(commands.Bot):
         SlashCommand(self)
         self.load_extension("cogs.admin")
         self.load_extension("cogs.music")
+        # self.load_extension("cogs.scrobble")
 
     async def on_ready(self):
         log.info(f"Online as {self.user.name}. ID: {self.user.id}")
