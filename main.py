@@ -1,6 +1,7 @@
 import logging
 import os
 
+from discord import Intents
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context
 from discord_slash import SlashCommand
@@ -34,7 +35,11 @@ def main():
 
     setup_logging()
 
-    bot = DamaBot()
+    # Extended intents are needed for retrieving user activities (Spotify)
+    intents = Intents.default()
+    intents.members = True
+    intents.presences = True
+    bot = DamaBot(intents=intents)
 
     bot.run(os.environ["DISCORD_TOKEN"])
 

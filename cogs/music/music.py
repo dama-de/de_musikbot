@@ -13,9 +13,9 @@ from discord_slash.utils.manage_commands import create_option
 from util import get_command
 from util.config import Config
 from . import search
-from .classes import Album, Artist
+from .classes import Album, Artist, Track
 from .search import lastfm_net, genius
-from .util import rym_search, mklinks, make_table, tbl_format, tbl_artist_format
+from .util import rym_search, mklinks, make_table, tbl_format, tbl_artist_format, get_activity
 
 slash_guilds = None
 
@@ -98,10 +98,19 @@ class Music(Cog):
         """Fetch the currently playing song."""
         author = ctx.author.display_name
 
-        track = await search.get_scrobble(self.get_lastfm_user(ctx.author))
-        if not track:
-            await self.reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
-            return
+        track = Track()
+
+        # Try to retrieve the user's activity
+        activity = get_activity(ctx.author, "Spotify")
+        if activity:
+            track.update(search.pack_spotify_activity(activity))
+
+        if not activity:
+            # Get current scrobble from last.fm, skip if activity was used
+            track.update(await search.get_scrobble(self.get_lastfm_user(ctx.author)))
+            if not track:
+                await self.reply_on_error(ctx, "Nothing is currently scrobbling on last.fm")
+                return
 
         # Try to enhance with Spotify data
         sp_query = f"track:{track.name} artist:{track.artist.name}"
@@ -112,8 +121,11 @@ class Music(Cog):
 
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
         embed.set_author(name=author, icon_url=ctx.author.avatar_url)
-        embed.set_footer(text="Now scrobbling on last.fm")
         embed.set_thumbnail(url=track.album.img_url or EmptyEmbed)
+
+        # Footer text, depending on where we got our data from
+        footer_string = "Now playing on Spotify" if activity else "Now scrobbling on last.fm"
+        embed.set_footer(text=footer_string)
 
         # If an album date exists, mention the year in the description, else suppress
         formatted_year = f" ({track.album.date[:4]})" if track.album.date else ""

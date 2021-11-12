@@ -2,6 +2,7 @@ import asyncio
 import os
 from typing import Optional
 
+import discord
 import lyricsgenius
 import pylast
 import tekore
@@ -178,3 +179,17 @@ def pack_lastfm_album(data: pylast.Album) -> Optional[Album]:
     album.img_url = data.get_cover_image()
 
     return album
+
+
+def pack_spotify_activity(activity: discord.Spotify) -> Optional[Track]:
+    if not activity:
+        return None
+
+    result = Track()
+    result.name = activity.title
+    result.length = int(activity.duration.total_seconds())
+    result.url = "https://open.spotify.com/track/" + activity.track_id
+    result.artist.name = activity.artist
+    result.album.name = activity.album
+    result.album.img_url = activity.album_cover_url
+    return result

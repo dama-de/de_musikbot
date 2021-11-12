@@ -1,4 +1,25 @@
+from typing import Optional
 from urllib.parse import quote_plus
+
+from discord import User, Member, Activity
+from discord.utils import get
+
+
+def get_activity(user: User, of_type: str) -> Optional[Activity]:
+    member: Member = None
+
+    if isinstance(user, Member):
+        member = user
+    if isinstance(user, User):
+        # Try to find the user as a member, so we can see their activities
+        if user.mutual_guilds:
+            member = get(user.mutual_guilds[0].members, id=user.id)
+
+    if member:
+        if of_type:
+            return get(member.activities, name=of_type)
+        else:
+            return member.activity
 
 
 def rym_search(query, searchtype=None):
