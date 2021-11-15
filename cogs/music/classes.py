@@ -8,6 +8,9 @@ class NamedBase:
         return self.name
 
     def update(self, data):
+        if not data:
+            return
+
         for key in data.__dict__:
             value = getattr(data, key)
 
