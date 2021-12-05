@@ -26,7 +26,8 @@ _log = logging.getLogger(__name__)
 
 
 class NotRegisteredError(Exception):
-    pass
+    def __init__(self, user: discord.User):
+        self.user = user
 
 
 class Music(Cog):
@@ -43,7 +44,7 @@ class Music(Cog):
     def get_lastfm_user(self, user: discord.User) -> Optional[str]:
         if str(user.id) in self.data["names"]:
             return self.data["names"][str(user.id)]
-        raise NotRegisteredError()
+        raise NotRegisteredError(user)
 
     async def reply_on_error(self, ctx, message: str):
         if "SKIP_SLASH" not in os.environ and isinstance(ctx, SlashContext):
@@ -98,6 +99,10 @@ class Music(Cog):
     @last.command()
     async def register(self, ctx, lastfm_name: str):
         """Register your last.fm account with this bot."""
+        if not await search.user_exists(lastfm_name):
+            await self.reply_on_error(ctx, "User does not exist.")
+            return
+
         self.data["names"][str(ctx.author.id)] = lastfm_name
         self.config.save()
         if "SKIP_SLASH" not in os.environ and isinstance(ctx, SlashContext):

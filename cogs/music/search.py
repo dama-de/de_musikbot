@@ -36,14 +36,25 @@ genius = lyricsgenius.Genius(
     os.environ["GENIUS_CLIENT_SECRET"])
 
 
-def get_lastfm_user(username: str) -> pylast.User:
+def _get_lastfm_user(username: str) -> pylast.User:
     if not isinstance(username, str):
         raise TypeError("Username must be a str, but is " + username.__class__.__name__)
     return lastfm_net.get_user(username)
 
 
+async def user_exists(username: str) -> bool:
+    userobj = _get_lastfm_user(username)
+    try:
+        await asyncio.to_thread(userobj.get_registered)
+        return True
+    except pylast.WSError as err:
+        if err.details == "User not found":
+            return False
+        raise err
+
+
 async def get_recent(username: str) -> List[Track]:
-    user = get_lastfm_user(username)
+    user = _get_lastfm_user(username)
     return await asyncio.to_thread(user.get_recent_tracks)
 
 
