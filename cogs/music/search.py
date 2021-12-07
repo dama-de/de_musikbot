@@ -60,7 +60,7 @@ async def get_recent(username: str) -> List[Track]:
 
 async def get_scrobble(username: str) -> Optional[Scrobble]:
     result = await asyncio.to_thread(lastfm_net.get_user(username).get_now_playing)
-    return await asyncio.to_thread(_pack_lastfm_scrobble, result)
+    return await asyncio.to_thread(_pack_lastfm_track, result)
 
 
 async def search_lastfm_album(search: str) -> Optional[Album]:
