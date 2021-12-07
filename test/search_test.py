@@ -7,6 +7,7 @@ import pytest
 # Mark all tests in this module as async
 pytestmark = pytest.mark.asyncio
 
+
 @pytest.fixture(scope="module")
 def event_loop():
     """We need to supply our own broadly scoped event_loop for the async search fixture to work"""
@@ -21,6 +22,17 @@ async def search():
     from cogs.music import search
     yield search
     await search.spotify_api.close()
+
+
+async def test_get_scrobble(search, mocker):
+    # Mock pylast to always supply a scrobble
+    track = search.lastfm_net.get_track_by_mbid("50347f42-2a40-4df6-b358-07f994af7a3f")
+    get_scrobble_patch = mocker.patch("pylast.User.get_now_playing")
+    get_scrobble_patch.return_value = track
+
+    result = await search.get_scrobble("dam4rusxp")
+    assert result.name == "What I've Done"
+    assert result.artist.name == "Linkin Park"
 
 
 async def test_search_spotify_track(search):
