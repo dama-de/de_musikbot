@@ -73,6 +73,7 @@ class Music(Cog):
                 ctx, "There was an error while communicating with the Spotify API, please try again later."
             )
         elif isinstance(error, NotRegisteredError):
+            _log.debug(f"User {ctx.author} is not registered.")
             await self.reply_on_error(ctx, "You must register with `/last register` first.")
         else:
             _log.error("Unhandled error during command: " + get_command(ctx), exc_info=error)

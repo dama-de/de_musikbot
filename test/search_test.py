@@ -1,27 +1,9 @@
-import asyncio
-
 import pytest
 
 # Tests for the cogs.music.search module
 
 # Mark all tests in this module as async
 pytestmark = pytest.mark.asyncio
-
-
-@pytest.fixture(scope="module")
-def event_loop():
-    """We need to supply our own broadly scoped event_loop for the async search fixture to work"""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="module")
-async def search():
-    """Closes the Spotify API after the tests, to avoid an error in the log"""
-    from cogs.music import search
-    yield search
-    await search.spotify_api.close()
 
 
 async def test_get_scrobble(search, mocker):

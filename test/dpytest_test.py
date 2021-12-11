@@ -78,6 +78,21 @@ async def test_wrong_period(damabot):
     assert dpytest.verify().message().contains().content("Unknown time-period.")
 
 
+async def test_now(damabot, search, mocker):
+    track = search.lastfm_net.get_track("Myd", "We Found It")
+    get_scrobble_patch = mocker.patch("pylast.User.get_now_playing")
+    get_scrobble_patch.return_value = track
+
+    await dpytest.message(".last register anon")
+    await dpytest.message(".last now")
+
+    embed = dpytest.get_message(True).embeds[0]
+    assert embed.title == 'Myd, Bakar - We Found It'
+    assert embed.description == 'Born a Loser (2021)'
+    assert embed.url == 'https://open.spotify.com/track/4TUqDLaBxUQHphes04Kp5k'
+    assert embed.thumbnail.url == 'https://i.scdn.co/image/ab67616d0000b273164f8eec0d728605748bc4b2'
+
+
 async def test_last_my(damabot):
     await dpytest.message(".last register dam4rusxp")
     await dpytest.message(".last my")
