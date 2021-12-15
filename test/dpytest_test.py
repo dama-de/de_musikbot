@@ -78,19 +78,32 @@ async def test_wrong_period(damabot):
     assert dpytest.verify().message().contains().content("Unknown time-period.")
 
 
-async def test_now(damabot, search, mocker):
-    track = search.lastfm_net.get_track("Myd", "We Found It")
+@pytest.mark.parametrize(
+    # @formatter:off
+    "scrobble_artist, scrobble_title, embed_title, embed_description, embed_footer, embed_url, embed_thumbnail", [
+        ("Low Roar", "Don't Be so Serious", "Low Roar - Don't Be So Serious", "Once In a Long, Long While... (2017)", "Now scrobbling on last.fm", "https://open.spotify.com/track/03RS5t6vNp1mw3zdGYCgwb", "https://i.scdn.co/image/ab67616d0000b2738c4171c2088bf9f3f08bd2dd"),
+        ('Mito Tsukino', '浮遊感UFO', 'Mito Tsukino - 浮遊感UFO', '月の兎はヴァーチュアルの夢をみる (2021)', 'Now scrobbling on last.fm', 'https://open.spotify.com/track/1E5ET8QkpofNJZSNRmjzVT', 'https://i.scdn.co/image/ab67616d0000b273f4de85f41ea577077468f614'),
+        ('Kropp', 'Din Kropp', 'Kropp - Din Kropp', 'Kropp (2014)', 'Now scrobbling on last.fm', 'https://open.spotify.com/track/5NRCABovvUwHjYRfzAx5tL', 'https://i.scdn.co/image/ab67616d0000b273d284b29956ed2f49dae05b24'),
+    ])
+    # @formatter:on
+async def test_now(damabot, search, mocker, scrobble_artist, scrobble_title, embed_title, embed_description,
+                   embed_footer, embed_url, embed_thumbnail):
+    track = search.lastfm_net.search_for_track(scrobble_artist, scrobble_title).get_next_page()[0]
     get_scrobble_patch = mocker.patch("pylast.User.get_now_playing")
     get_scrobble_patch.return_value = track
 
     await dpytest.message(".last register anon")
     await dpytest.message(".last now")
 
-    embed = dpytest.get_message(True).embeds[0]
-    assert embed.title == 'Myd, Bakar - We Found It'
-    assert embed.description == 'Born a Loser (2021)'
-    assert embed.url == 'https://open.spotify.com/track/4TUqDLaBxUQHphes04Kp5k'
-    assert embed.thumbnail.url == 'https://i.scdn.co/image/ab67616d0000b273164f8eec0d728605748bc4b2'
+    embed = dpytest.get_message().embeds[0]
+    _log.info('Copy paste this for new parameters:\n'
+              f'("{scrobble_artist}", "{scrobble_title}", "{embed.title}", "{embed.description}",'
+              f' "{embed.footer.text}", "{embed.url}", "{embed.thumbnail.url}"),')
+    assert embed.title == embed_title
+    assert embed.description == embed_description
+    assert embed.url == embed_url
+    assert embed.thumbnail.url == embed_thumbnail
+    assert embed.footer.text == embed_footer
 
 
 async def test_last_my(damabot):

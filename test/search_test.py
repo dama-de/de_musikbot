@@ -1,6 +1,10 @@
+import logging
+
 import pytest
 
 # Tests for the cogs.music.search module
+
+_log = logging.getLogger(__name__)
 
 # Mark all tests in this module as async
 pytestmark = pytest.mark.asyncio
@@ -21,6 +25,25 @@ async def test_search_spotify_track(search):
     result = await search.search_spotify_track("track:What I've Done artist:Linkin Park")
     assert result.name == "What I've Done"
     assert result.artist.name == "Linkin Park"
+
+
+@pytest.mark.parametrize(["query"], [
+    ("artist:\"Björk\" track:\"I've seen\"",),
+    ("artist:\"Björk\" track:\"Ive seen\"",),
+    ("track:\"Dont Be so Serious\" artist:Low Roar",),
+    ("track:Don’t Be so Serious artist:Low Roar",),
+    ("track:Don't Be so Serious artist:Low Roar",),
+    ("track:Don't Be so Serious artist:Low Roar album:Once",),
+    ("track:Don't Be so Serious artist:Low Roar album:Once in a Long, Long While...",),
+    ("track:浮遊感UFO artist:Mito Tsukino",),
+    ("track:浮遊感UFO artist:Mito Tsukino album:月",),
+    ("track:\"浮遊感UFO\" artist:\"Mito Tsukino\" album:\"月の兎はヴァーチュアルの夢をみる\"",),
+])
+async def test_search_spotify_param(search, query):
+    result = await search._search_spotify(query, types=("track",))
+    _log.error(result)
+    assert result
+
 
 
 async def test_search_spotify_album(search):

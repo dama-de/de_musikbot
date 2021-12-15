@@ -133,7 +133,7 @@ async def _search_spotify(*args, **kwargs) -> Union[FullTrack, SimpleAlbum, Full
     kwargs["limit"] = 1
 
     _log.debug(f"Querying Spotify: {args}, {kwargs}")
-    result = await spotify_api.search(*args, **kwargs)
+    result = await spotify_api.search(args[0].replace("'", ""), **kwargs)
 
     # Try to extract the data object from the raw API response
     if result and result[0].items:

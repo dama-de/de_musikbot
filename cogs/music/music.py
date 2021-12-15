@@ -131,8 +131,8 @@ class Music(Cog):
                 return
 
         # Try to enhance with Spotify data
-        sp_query = f"track:{track.name} artist:{track.artist.name}"
-        sp_query += f" album:{track.album.name}" if track.album else ""
+        sp_query = f"track:\"{track.name}\" artist:\"{track.artist.name}\""
+        sp_query += f" album:\"{track.album.name}\"" if track.album else ""
         sp_result = await search.search_spotify_track(sp_query)
         if sp_result:
             track.update(sp_result)
