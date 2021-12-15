@@ -241,6 +241,13 @@ class Music(Cog):
 
         await ctx.send(embed=embed)
 
+    @last.command()
+    async def my(self, ctx: discord.ext.commands.Context):
+        """Share your last.fm profile link"""
+        last_username = self.get_lastfm_user(ctx.author)
+        await ctx.reply(f"https://www.last.fm/user/{last_username}")
+
+
     @command()
     async def track(self, ctx, *, search_query: str):
         """Search for a single track"""
@@ -398,6 +405,10 @@ class Music(Cog):
         async def _tracks(self, ctx: SlashContext, period="all"):
             await ctx.defer()
             await self.tracks(ctx, period)
+
+        @cog_ext.cog_subcommand(base="last", name="my", description="Share your last.fm profile link")
+        async def _my(self, ctx: SlashContext):
+            await self.my(ctx)
 
         @cog_ext.cog_slash(name="lyricsgenius",
                            description="Search for a Genius page, or get the page of the Song your're listening to",
