@@ -247,7 +247,6 @@ class Music(Cog):
         last_username = self.get_lastfm_user(ctx.author)
         await ctx.reply(f"https://www.last.fm/user/{last_username}")
 
-
     @command()
     async def track(self, ctx, *, search_query: str):
         """Search for a single track"""
