@@ -10,16 +10,11 @@ log = logging.getLogger(__name__)
 
 
 class DamaBot(commands.Bot):
-    slash: None  # type: discord_slash.SlashCommand
 
     def __init__(self, **kwargs):
         # Init client with all intents enabled
         kwargs["intents"] = Intents.all()
         super().__init__(command_prefix=os.environ["PREFIX"], **kwargs)
-
-        if "SKIP_SLASH" not in os.environ:
-            from discord_slash import SlashCommand
-            SlashCommand(self)
 
         self.load_extension("cogs.admin")
         self.load_extension("cogs.music")

@@ -1,10 +1,8 @@
-discord.py == 1.7.3
+-e git+https://github.com/Pycord-Development/pycord#egg=py-cord
 pylast == 4.4.0
 tekore == 4.1.0
 python-dotenv == 0.19.2
-discord-py-interactions == 3.0.2
 lyricsgenius == 3.0.1
 pytest == 6.2.5
 pytest-asyncio == 0.16.0
 pytest-mock == 3.6.1
-dpytest == 0.5.3

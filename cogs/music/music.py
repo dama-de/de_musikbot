@@ -9,10 +9,6 @@ import tekore
 from discord.embeds import EmptyEmbed
 from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group, CommandInvokeError, CommandError
 
-if "SKIP_SLASH" not in os.environ:
-    from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
-    from discord_slash.utils.manage_commands import create_option
-
 from util import get_command
 from util.config import Config
 from . import search
