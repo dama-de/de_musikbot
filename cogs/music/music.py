@@ -251,6 +251,11 @@ class Music(Cog):
     async def track(self, ctx, *, search_query: str):
         """Search for a single track"""
         result = await search.search_spotify_track(search_query)
+
+        if not result:
+            await self.reply_on_error(ctx, "No results found.")
+            return
+
         url = result.url
         await ctx.send(url)
 
