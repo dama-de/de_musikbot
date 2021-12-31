@@ -7,4 +7,4 @@ Ein Bot mit Musikfunktionen.
 - [Manage Genius API accounts](https://genius.com/api-clients)
 
 1. Create a new file `.env` from the sample.env template
-1. Run `sudo docker-compose up --build`
+2. Run `sudo docker-compose up --build`
