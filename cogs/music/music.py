@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import discord
 import pylast
@@ -33,7 +33,7 @@ class Music(Cog):
             self.data["names"] = {"132551667085344769": "dam4rusxp"}
             self.config.save()
 
-    def get_lastfm_user(self, user: discord.User) -> Optional[str]:
+    def get_lastfm_user(self, user: Union[discord.User, discord.Member]) -> Optional[str]:
         if str(user.id) in self.data["names"]:
             return self.data["names"][str(user.id)]
         return None
@@ -82,6 +82,14 @@ class Music(Cog):
         """last.fm command category"""
         if not ctx.invoked_subcommand:
             await ctx.send("Try `{}help`".format(ctx.prefix))
+
+    @last.command()
+    async def user(self, ctx, member: discord.Member):
+        """Get last.fm account by member"""
+        user = self.get_lastfm_user(member)
+        member_link = f"https://www.last.fm/user/{user}"
+
+        await ctx.send(member_link)
 
     @last.command()
     async def register(self, ctx, lastfm_name: str):
@@ -409,3 +417,14 @@ class Music(Cog):
         embed.add_field(name='Link', value=str(song.url))
         embed.set_thumbnail(url=song.header_image_url)
         await ctx.send(embed=embed)
+
+    @cog_ext.cog_subcommand(base="last", name="user", description="Get last.fm account by member",
+                            guild_ids=slash_guilds,
+                            options=[create_option(
+                                name="member", description="The member",
+                                required=True,
+                                option_type=SlashCommandOptionType.USER)]
+                            )
+    async def _user(self, ctx: SlashContext, member: discord.Member):
+        await ctx.defer()
+        await self.user(ctx, member)
