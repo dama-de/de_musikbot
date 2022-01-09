@@ -172,7 +172,9 @@ def _pack_spotify_artist(data: Union[SimpleArtist, FullArtist]) -> Optional[Arti
     result.tags = ", ".join(data.genres)
     result.popularity = data.popularity
     result.url = data.external_urls["spotify"]
-    result.img_url = data.images[0].url
+
+    if data.images:
+        result.img_url = data.images[0].url
 
     return result
 

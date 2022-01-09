@@ -82,3 +82,9 @@ async def test_last_my(damabot):
     await dpytest.message(".last register dam4rusxp")
     await dpytest.message(".last my")
     assert dpytest.verify().message().content("https://www.last.fm/user/dam4rusxp")
+
+
+async def test_artist_missing_spotify_image(damabot):
+    await dpytest.message(".artist \"Mikkel Rev\"")
+    msg = dpytest.get_message()
+    assert msg.embeds
