@@ -131,6 +131,7 @@ class Music(Cog):
                 return
 
         # Try to enhance with Spotify data
+        # Searches for tracks with multiple artists will fail, we should only search for the first artist
         sp_query = f"track:\"{track.name}\" artist:\"{track.artist.name}\""
         sp_query += f" album:\"{track.album.name}\"" if track.album else ""
         sp_result = await search.search_spotify_track(sp_query)
