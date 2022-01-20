@@ -246,7 +246,7 @@ def _pack_spotify_activity(activity: discord.Spotify) -> Optional[Track]:
     result.name = activity.title
     result.length = int(activity.duration.total_seconds())
     result.url = "https://open.spotify.com/track/" + activity.track_id
-    result.artist.name = activity.artist
+    result.artist.name = ", ".join(activity.artists)
     result.album.name = activity.album
     result.album.img_url = activity.album_cover_url
     return result
