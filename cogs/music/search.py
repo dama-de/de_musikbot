@@ -78,7 +78,7 @@ async def search_lastfm_artist(artist: str, exact=False) -> Optional[Artist]:
         result = lastfm_net.get_artist(artist)
     else:
         result = await asyncio.to_thread(lastfm_net.search_for_artist(artist).get_next_page)
-        result = result[0]
+        result = result[0] if result else None
 
     return await asyncio.to_thread(_pack_lastfm_artist, result)
 

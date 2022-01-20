@@ -322,6 +322,11 @@ class Music(Cog):
             last_result = await search.search_lastfm_artist(search_query[1:-1], exact=True)
         else:
             last_result = await search.search_lastfm_artist(search_query)
+
+        if not last_result:
+            await self.reply_on_error(ctx, "No artist found.")
+            return
+
         artist.update(last_result)
         urls["Last.fm"] = last_result.url
 
