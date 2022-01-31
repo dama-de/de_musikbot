@@ -35,3 +35,10 @@ class Admin(Cog):
     @command(hidden=True)
     async def emoji(self, ctx: Context, emoji):
         await ctx.reply(unicodedata.name(emoji[0]))
+
+    @command(hidden=True)
+    async def leave(self, ctx: Context, server_id=None):
+        if not server_id:
+            server_id = ctx.guild.id
+        guild = ctx.bot.get_guild(server_id)
+        await guild.leave()
