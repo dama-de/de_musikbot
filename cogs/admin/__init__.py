@@ -1,6 +1,8 @@
-import unicodedata
+import logging
 
 from discord.ext.commands import Bot, Cog, Context, command
+
+_log = logging.getLogger(__name__)
 
 
 def setup(bot: Bot):
@@ -33,12 +35,9 @@ class Admin(Cog):
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
     @command(hidden=True)
-    async def emoji(self, ctx: Context, emoji):
-        await ctx.reply(unicodedata.name(emoji[0]))
-
-    @command(hidden=True)
     async def leave(self, ctx: Context, server_id=None):
         if not server_id:
             server_id = ctx.guild.id
         guild = ctx.bot.get_guild(server_id)
         await guild.leave()
+        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")

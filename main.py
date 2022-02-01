@@ -23,6 +23,7 @@ class DamaBot(commands.Bot):
 
         self.load_extension("cogs.admin")
         self.load_extension("cogs.music")
+        self.load_extension("cogs.emoji")
         # self.load_extension("cogs.scrobble")
 
     async def on_ready(self):
