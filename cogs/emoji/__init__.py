@@ -23,7 +23,7 @@ class Emoji(Cog):
     @commands.has_guild_permissions(manage_emojis=True)
     @commands.command()
     async def yoink(self, ctx: Context, emoji: str, name=""):
-        match = re.match("^<:(.+):(\\d+)>$", emoji)
+        match = re.match("^<a?:(.+):(\\d+)>$", emoji)
         if not match:
             await ctx.reply("Please supply an emoji.")
             return
