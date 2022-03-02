@@ -1,10 +1,7 @@
 import logging
-import os
 
+from discord import ApplicationContext
 from discord.ext.commands import Context
-
-if "SKIP_SLASH" not in os.environ:
-    from discord_slash import SlashContext
 
 _log = logging.getLogger(__name__)
 
@@ -14,9 +11,9 @@ def get_command(ctx) -> str:
     Retrieve the original command as a string from a commands.Context or SlashContext.
     """
     if isinstance(ctx, Context):
-        return ctx.message.clean_content
-    elif isinstance(ctx, SlashContext):
-        result = "/" + ctx.command
-        result += " " + ctx.subcommand_name if ctx.subcommand_name else ""
-        result += " " + " ".join([f"{k}:{v}" for (k, v) in ctx.kwargs.items()])
+        return ctx.message.clean_content()
+    elif isinstance(ctx, ApplicationContext):
+        result = "/" + ctx.command.qualified_name
+        # result += " " + ctx.subcommand_name if ctx.command.is_subcommand else ""
+        # result += " " + " ".join([f"{k}:{v}" for (k, v) in ctx.options.items()])
         return result
