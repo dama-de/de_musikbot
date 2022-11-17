@@ -2,6 +2,8 @@ import logging
 
 from discord.ext.commands import Bot, Cog, Context, command
 
+from util.config import Config
+
 _log = logging.getLogger(__name__)
 
 
@@ -11,29 +13,70 @@ async def setup(bot: Bot):
 
 class Admin(Cog):
 
+    def __init__(self):
+        self.config = None
+
+    def _save(self) -> None:
+        self.config.data["cogs.enabled"] = list(set(self.config.data["cogs.enabled"]))
+        self.config.save()
+
+    async def cog_load(self) -> None:
+        self.config = Config("admin")
+
+        if "cogs.enabled" not in self.config.data:
+            self.config.data["cogs.enabled"] = []
+
+        self._save()
+
+    async def cog_unload(self) -> None:
+        self._save()
+
     async def cog_check(self, ctx):
         return await ctx.bot.is_owner(ctx.author)
 
     @command(hidden=True)
     async def load(self, ctx: Context, cog: str):
-        ctx.bot.load_extension(cog)
-        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        await ctx.bot.load_extension(cog)
+        await self._react_ok(ctx)
 
     @command(hidden=True)
     async def unload(self, ctx: Context, cog: str):
-        ctx.bot.unload_extension(cog)
-        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        await ctx.bot.unload_extension(cog)
+        await self._react_ok(ctx)
 
     @command(hidden=True)
     async def reload(self, ctx: Context, cog: str):
-        ctx.bot.reload_extension(cog)
+        await ctx.bot.reload_extension(cog)
+        await self._react_ok(ctx)
+
+    @command(hidden=True)
+    async def enable(self, ctx: Context, cog: str):
+        if cog in ctx.bot.extensions:
+            if cog not in self.config.data:
+                self.config.data["cogs.enabled"].append(cog)
+                self._save()
+
+            await self._react_ok(ctx)
+        else:
+            await ctx.message.add_reaction("\N{BLACK QUESTION MARK ORNAMENT}")
+
+    @command(hidden=True)
+    async def disable(self, ctx: Context, cog: str):
+        if cog in ctx.bot.extensions:
+            self.config.data["cogs.enabled"].remove(cog)
+            self._save()
+            await self._react_ok(ctx)
+        else:
+            await ctx.message.add_reaction("\N{BLACK QUESTION MARK ORNAMENT}")
+
+    async def _react_ok(self, ctx):
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
     @command(hidden=True)
     async def syncslash(self, ctx: Context):
         # await ctx.bot.slash.sync_all_commands(delete_from_unused_guilds=True, delete_perms_from_unused_guilds=True)
         await ctx.bot.tree.sync()
-        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        await self._react_ok(ctx)
 
     @command(hidden=True)
     async def leave(self, ctx: Context, server_id=None):
@@ -41,4 +84,4 @@ class Admin(Cog):
             server_id = ctx.guild.id
         guild = ctx.bot.get_guild(server_id)
         await guild.leave()
-        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        await self._react_ok(ctx)

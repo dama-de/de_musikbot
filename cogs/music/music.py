@@ -8,6 +8,7 @@ import pylast
 import tekore
 from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group, CommandInvokeError, CommandError
 
+# TODO Replace discord_slash with new discord.py application commands
 if "SKIP_SLASH" not in os.environ:
     from discord_slash import SlashContext, cog_ext, SlashCommandOptionType
     from discord_slash.utils.manage_commands import create_option

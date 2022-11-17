@@ -6,6 +6,8 @@ from discord.ext import commands
 from discord.ext.commands import CommandError, Context
 from dotenv import load_dotenv
 
+from util.config import Config
+
 log = logging.getLogger(__name__)
 
 
@@ -22,9 +24,15 @@ class DamaBot(commands.Bot):
             SlashCommand(self)
 
     async def setup_hook(self):
-        await self.load_extension("cogs.admin")
-        await self.load_extension("cogs.music")
-        await self.load_extension("cogs.emoji")
+        config = Config("admin")
+
+        if "cogs.enabled" in config.data:
+            for cog in config.data["cogs.enabled"]:
+                log.info(f"Loading {cog}")
+                await self.load_extension(cog)
+        else:
+            await self.load_extension("cogs.admin")
+            await self.load_extension("cogs.music")
 
     async def on_ready(self):
         log.info(f"Online as {self.user.name}. ID: {self.user.id}")
