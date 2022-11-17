@@ -1,7 +1,7 @@
-discord.py == 1.7.3
-pylast == 4.4.0
-tekore == 4.1.0
-python-dotenv == 0.19.2
+git+https://github.com/Rapptz/discord.py.git@4fbafcd#discord
+pylast == 5.0.0
+tekore == 4.4.0
+python-dotenv == 0.20.0
 discord-py-interactions == 3.0.2
 lyricsgenius == 3.0.1
 pytest == 6.2.5

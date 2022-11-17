@@ -9,8 +9,8 @@ from discord.ext.commands import Bot, Cog, Context
 _log = logging.getLogger(__name__)
 
 
-def setup(bot: Bot):
-    bot.add_cog(Emoji())
+async def setup(bot: Bot):
+    await bot.add_cog(Emoji())
 
 
 class Emoji(Cog):

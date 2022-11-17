@@ -6,7 +6,6 @@ from typing import Optional
 import discord
 import pylast
 import tekore
-from discord.embeds import EmptyEmbed
 from discord.ext.commands import MissingRequiredArgument, Bot, Cog, command, group, CommandInvokeError, CommandError
 
 if "SKIP_SLASH" not in os.environ:
@@ -138,7 +137,7 @@ class Music(Cog):
 
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
         embed.set_author(name=author, icon_url=ctx.author.avatar_url)
-        embed.set_thumbnail(url=track.album.img_url or EmptyEmbed)
+        embed.set_thumbnail(url=track.album.img_url or None)
 
         # Footer text, depending on where we got our data from
         footer_string = "Now playing on Spotify" if activity else "Now scrobbling on last.fm"
@@ -297,7 +296,7 @@ class Music(Cog):
         description = f"*{album.artist.name}*{metrics}\n\n{mklinks(urls)}"
 
         embed = discord.Embed(title=album.name, description=description, url=album.url)
-        embed.set_thumbnail(url=album.img_url or EmptyEmbed)
+        embed.set_thumbnail(url=album.img_url or None)
 
         await ctx.send(embed=embed)
 
@@ -338,7 +337,7 @@ class Music(Cog):
         urls["RYM"] = rym_search(artist.name, searchtype="a")
 
         embed = discord.Embed(title=artist.name, url=artist.url)
-        embed.set_thumbnail(url=artist.img_url or EmptyEmbed)
+        embed.set_thumbnail(url=artist.img_url or None)
         embed.description = f"{artist.bio}\n\nTop Tags: {artist.tags}\n\n{mklinks(urls)}"
 
         await ctx.send(embed=embed)

@@ -21,10 +21,10 @@ class DamaBot(commands.Bot):
             from discord_slash import SlashCommand
             SlashCommand(self)
 
-        self.load_extension("cogs.admin")
-        self.load_extension("cogs.music")
-        self.load_extension("cogs.emoji")
-        # self.load_extension("cogs.scrobble")
+    async def setup_hook(self):
+        await self.load_extension("cogs.admin")
+        await self.load_extension("cogs.music")
+        await self.load_extension("cogs.emoji")
 
     async def on_ready(self):
         log.info(f"Online as {self.user.name}. ID: {self.user.id}")
@@ -34,7 +34,7 @@ class DamaBot(commands.Bot):
             await ctx.send("Missing argument '" + error.param.name + "'")
             return
         elif isinstance(error, CommandError):
-            log.warning("Passing CommandError")
+            log.warning("Passing CommandError", error)
         else:
             log.error(f"Error during command: {ctx.message.clean_content}", exc_info=error)
 

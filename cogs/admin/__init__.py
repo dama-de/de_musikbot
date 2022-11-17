@@ -5,8 +5,8 @@ from discord.ext.commands import Bot, Cog, Context, command
 _log = logging.getLogger(__name__)
 
 
-def setup(bot: Bot):
-    bot.add_cog(Admin())
+async def setup(bot: Bot):
+    await bot.add_cog(Admin())
 
 
 class Admin(Cog):
@@ -31,7 +31,8 @@ class Admin(Cog):
 
     @command(hidden=True)
     async def syncslash(self, ctx: Context):
-        await ctx.bot.slash.sync_all_commands(delete_from_unused_guilds=True, delete_perms_from_unused_guilds=True)
+        # await ctx.bot.slash.sync_all_commands(delete_from_unused_guilds=True, delete_perms_from_unused_guilds=True)
+        await ctx.bot.tree.sync()
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
     @command(hidden=True)

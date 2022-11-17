@@ -1,5 +1,5 @@
 from .scrobble import Scrobble
 
 
-def setup(bot):
-    bot.add_cog(Scrobble())
+async def setup(bot):
+    await bot.add_cog(Scrobble())
