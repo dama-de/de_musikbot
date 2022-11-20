@@ -38,8 +38,9 @@ class DamaBot(commands.Bot):
 
     async def on_command_error(self, ctx: Context, error: CommandError):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Missing argument '" + error.param.name + "'")
-            return
+            await ctx.reply("Missing argument '" + error.param.name + "'")
+        elif isinstance(error, commands.CommandNotFound):
+            await ctx.reply("Unknown command.")
         elif isinstance(error, CommandError):
             log.warning("Passing CommandError", error)
         else:
