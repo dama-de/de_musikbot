@@ -19,8 +19,8 @@ class DamaBot(commands.Bot):
         super().__init__(command_prefix=os.environ["PREFIX"], **kwargs)
 
     async def load_ext(self, cog: str):
-        log.info(f"Loading {cog}")
         if cog not in self.extensions:
+            log.info(f"Loading {cog}")
             await self.load_extension(cog)
 
     async def setup_hook(self):
