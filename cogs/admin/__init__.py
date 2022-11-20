@@ -1,3 +1,4 @@
+import importlib.util
 import logging
 
 from discord.ext.commands import Bot, Cog, Context, command
@@ -35,23 +36,44 @@ class Admin(Cog):
         return await ctx.bot.is_owner(ctx.author)
 
     @command(hidden=True)
+    async def listcogs(self, ctx: Context):
+        await ctx.reply("\n".join(sorted(ctx.bot.extensions)))
+
+    @command(hidden=True)
+    async def listenabled(self, ctx: Context):
+        await ctx.reply("\n".join(sorted(self.config.data["cogs.enabled"])))
+
+    @command(hidden=True)
     async def load(self, ctx: Context, cog: str):
-        await ctx.bot.load_extension(cog)
-        await self._react_ok(ctx)
+        resolved = importlib.util.find_spec(cog, None)
+        if resolved:
+            await ctx.bot.load_extension(cog)
+            await self._react_ok(ctx)
+        else:
+            await ctx.message.add_reaction("\N{BLACK QUESTION MARK ORNAMENT}")
 
     @command(hidden=True)
     async def unload(self, ctx: Context, cog: str):
-        await ctx.bot.unload_extension(cog)
-        await self._react_ok(ctx)
+        resolved = importlib.util.find_spec(cog, None)
+        if resolved:
+            await ctx.bot.unload_extension(cog)
+            await self._react_ok(ctx)
+        else:
+            await ctx.message.add_reaction("\N{BLACK QUESTION MARK ORNAMENT}")
 
     @command(hidden=True)
     async def reload(self, ctx: Context, cog: str):
-        await ctx.bot.reload_extension(cog)
-        await self._react_ok(ctx)
+        resolved = importlib.util.find_spec(cog, None)
+        if resolved:
+            await ctx.bot.reload_extension(cog)
+            await self._react_ok(ctx)
+        else:
+            await ctx.message.add_reaction("\N{BLACK QUESTION MARK ORNAMENT}")
 
     @command(hidden=True)
     async def enable(self, ctx: Context, cog: str):
-        if cog in ctx.bot.extensions:
+        resolved = importlib.util.find_spec(cog, None)
+        if resolved:
             if cog not in self.config.data:
                 self.config.data["cogs.enabled"].append(cog)
                 self._save()
@@ -74,7 +96,6 @@ class Admin(Cog):
 
     @command(hidden=True)
     async def syncslash(self, ctx: Context):
-        # await ctx.bot.slash.sync_all_commands(delete_from_unused_guilds=True, delete_perms_from_unused_guilds=True)
         await ctx.bot.tree.sync()
         await self._react_ok(ctx)
 
