@@ -15,8 +15,8 @@ async def setup(bot: Bot):
 
 class Emoji(Cog):
 
-    @commands.command()
-    async def emoji(self, ctx: Context, emoji):
+    @commands.command(hidden=True)
+    async def pyemoji(self, ctx: Context, emoji):
         await ctx.reply(unicodedata.name(emoji[0]))
 
     @commands.guild_only()
