@@ -12,27 +12,26 @@ log = logging.getLogger(__name__)
 
 
 class DamaBot(commands.Bot):
-    slash: None  # type: discord_slash.SlashCommand
 
     def __init__(self, **kwargs):
         # Init client with all intents enabled
         kwargs["intents"] = Intents.all()
         super().__init__(command_prefix=os.environ["PREFIX"], **kwargs)
 
-        if "SKIP_SLASH" not in os.environ:
-            from discord_slash import SlashCommand
-            SlashCommand(self)
+    async def load_ext(self, cog: str):
+        log.info(f"Loading {cog}")
+        if cog not in self.extensions:
+            await self.load_extension(cog)
 
     async def setup_hook(self):
         config = Config("admin")
 
+        # This should always be loaded, else we can't manage cogs at all
+        await self.load_ext("cogs.admin")
+
         if "cogs.enabled" in config.data:
             for cog in config.data["cogs.enabled"]:
-                log.info(f"Loading {cog}")
-                await self.load_extension(cog)
-        else:
-            await self.load_extension("cogs.admin")
-            await self.load_extension("cogs.music")
+                await self.load_ext(cog)
 
     async def on_ready(self):
         log.info(f"Online as {self.user.name}. ID: {self.user.id}")
