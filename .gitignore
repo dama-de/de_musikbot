@@ -1,4 +1,5 @@
-/.idea/
+/.idea/*
+!/.idea/codeStyles
 /venv/
 /data/
 /test/data
