@@ -2,7 +2,6 @@ discord.py == 2.1.0
 pylast == 5.0.0
 tekore == 4.4.0
 python-dotenv == 0.20.0
-discord-py-interactions == 3.0.2
 lyricsgenius == 3.0.1
 pytest == 6.2.5
 pytest-asyncio == 0.16.0
