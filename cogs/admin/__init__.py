@@ -1,6 +1,8 @@
+import asyncio
 import importlib.util
 import logging
 
+from discord import Guild
 from discord.ext.commands import Bot, Cog, Context, command
 
 from util.config import Config
@@ -17,10 +19,6 @@ class Admin(Cog):
     def __init__(self):
         self.config = None
 
-    def _save(self) -> None:
-        self.config.data["cogs.enabled"] = list(set(self.config.data["cogs.enabled"]))
-        self.config.save()
-
     async def cog_load(self) -> None:
         self.config = Config("admin")
 
@@ -32,8 +30,12 @@ class Admin(Cog):
     async def cog_unload(self) -> None:
         self._save()
 
-    async def cog_check(self, ctx):
+    async def cog_check(self, ctx: Context):
         return await ctx.bot.is_owner(ctx.author)
+
+    def _save(self) -> None:
+        self.config.data["cogs.enabled"] = list(set(self.config.data["cogs.enabled"]))
+        self.config.save()
 
     @command(hidden=True)
     async def listcogs(self, ctx: Context):
@@ -91,18 +93,26 @@ class Admin(Cog):
         else:
             await ctx.message.add_reaction("\N{BLACK QUESTION MARK ORNAMENT}")
 
-    async def _react_ok(self, ctx):
-        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
-
     @command(hidden=True)
     async def syncslash(self, ctx: Context):
         await ctx.bot.tree.sync()
         await self._react_ok(ctx)
 
     @command(hidden=True)
-    async def leave(self, ctx: Context, server_id=None):
+    async def clearslash(self, ctx: Context, guild: Guild = None):
+        async with ctx.typing():
+            commands = await ctx.bot.tree.fetch_commands(guild=guild)
+            await asyncio.wait([appcommand.delete() for appcommand in commands])
+
+        await self._react_ok(ctx)
+
+    @command(hidden=True)
+    async def leave(self, ctx: Context, server_id: int = None):
         if not server_id:
             server_id = ctx.guild.id
         guild = ctx.bot.get_guild(server_id)
         await guild.leave()
         await self._react_ok(ctx)
+
+    async def _react_ok(self, ctx: Context):
+        await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
