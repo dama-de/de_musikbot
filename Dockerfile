@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add python3 py3-pip py3-aiohttp
+RUN apk add python3 py3-pip py3-aiohttp py3-pandas
 
 ADD main.py requirements.txt /bot/
 ADD cogs/ /bot/cogs/
