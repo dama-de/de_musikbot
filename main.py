@@ -60,6 +60,7 @@ class DamaBot(commands.Bot):
             log.warning("Passing CommandError", error)
         else:
             log.error(f"Error during command: {ctx.message.clean_content}", exc_info=error)
+        await super().on_command_error(ctx, error)
 
 
 if __name__ == "__main__":
