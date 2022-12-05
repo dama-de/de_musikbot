@@ -20,13 +20,15 @@ class GPT(Cog):
             self._config.data["temperature"] = 0.1
         if "model" not in self._config.data:
             self._config.data["model"] = "text-davinci-003"
+        if "max_tokens" not in self._config.data:
+            self._config.data["max_tokens"] = 1024
 
         self._config.save()
 
     @hybrid_command()
     @is_owner()
     async def gpt_model(self, ctx: Context):
-        await ctx.reply(view=SettingsView(self._config))
+        await ctx.reply(view=SettingsView(self._config), ephemeral=True)
 
     @command()
     @is_owner()
@@ -46,7 +48,7 @@ class GPT(Cog):
                     prompt=query,
                     user=ctx.author.name,
                     temperature=self._config.data["temperature"],
-                    max_tokens=1024
+                    max_tokens=self._config.data["max_tokens"]
                 )
                 await ctx.reply(completion.choices[0].text)
             except openai.error.InvalidRequestError as e:
