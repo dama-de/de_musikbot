@@ -114,5 +114,12 @@ class Admin(Cog):
         await guild.leave()
         await self._react_ok(ctx)
 
+    @command(hidden=True)
+    async def set(self, ctx: Context, config: str, item: str, value: str):
+        conf = Config(config)
+        conf.data[item] = value
+        conf.save()
+        await self._react_ok(ctx)
+
     async def _react_ok(self, ctx: Context):
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
