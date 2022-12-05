@@ -64,16 +64,14 @@ class ModelDropdown(discord.ui.Select):
         self._config = config
 
         models = ["text-davinci-003", "text-curie-001", "code-davinci-002", "code-cushman-001"]
+        selected_model = self._config.data["model"]
+
         options = [
-            discord.SelectOption(label=model, value=model)
+            discord.SelectOption(label=model, value=model, default=(model == selected_model))
             for model in models
         ]
 
-        row = None
-        if config.data["model"] in models:
-            row = models.index(config.data["model"])
-
-        super().__init__(placeholder="Choose a model", options=options, row=row)
+        super().__init__(placeholder="Choose a model", options=options)
 
     async def callback(self, interaction: Interaction):
         self._config.data["model"] = self.values[0]
