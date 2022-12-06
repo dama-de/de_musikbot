@@ -1,5 +1,6 @@
 import asyncio
 import importlib.util
+import json
 import logging
 
 from discord import Guild
@@ -118,9 +119,10 @@ class Admin(Cog):
     async def get(self, ctx: Context, config: str, item: str = None):
         conf = Config(config)
         if item:
-            await ctx.reply(str(conf.data[item]))
+            msg = f"`{json.dumps({item: conf.data[item]})}`"
         else:
-            await ctx.reply(str(conf.data))
+            msg = f"```\n{json.dumps(conf.data, indent=4)}\n```"
+        await ctx.reply(msg)
 
     @command(hidden=True)
     async def set(self, ctx: Context, config: str, item: str, value: str):

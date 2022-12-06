@@ -88,7 +88,7 @@ class Config:
 
     def save(self):
         with open(self.datafile, "w") as file:
-            file.write(json.dumps(self.data))
+            file.write(json.dumps(self.data, indent=4))
             file.close()
 
     def load(self) -> bool:
