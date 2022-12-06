@@ -49,8 +49,21 @@ def test_config_subclassing():
 
 
 def test_new_instance_does_not_overwrite_existing_file():
-    # TODO Implement
-    pass
+    class MyConf(Config):
+        my_default: str
+
+        def _init_defaults(self):
+            self.my_default = "default"
+
+    conf = MyConf("_foo")
+    conf.my_default = "changed"
+    conf.save()
+
+    del conf
+    Config._instances.clear()
+
+    conf = MyConf("_foo")
+    assert conf.my_default == "changed"
 
 
 def test_default_values_are_discarded_on_fetch_from_cache():

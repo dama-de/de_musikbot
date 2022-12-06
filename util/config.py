@@ -41,6 +41,7 @@ class Config:
             Path(self.datadir).mkdir(parents=True, exist_ok=True)
             self._init_defaults()
             self.load()
+            self.save()
 
     def _init_defaults(self):
         """Subclasses should set their default values in here instead of `__init__`"""
@@ -76,7 +77,6 @@ class Config:
                 self.data[name] = hinted_type(value)
             else:
                 self.data[name] = value
-            self.save()
 
     @property
     def name(self) -> str:
