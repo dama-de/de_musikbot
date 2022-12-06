@@ -17,7 +17,8 @@ def main():
     load_dotenv(verbose=True)
 
     bot = DamaBot()
-    bot.run(os.environ["DISCORD_TOKEN"])
+    # https://discordpy.readthedocs.io/en/stable/logging.html
+    bot.run(os.environ["DISCORD_TOKEN"], log_handler=None)
 
 
 def setup_logging():
