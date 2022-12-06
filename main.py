@@ -3,7 +3,6 @@ import os
 
 from discord import Intents
 from discord.ext import commands
-from discord.ext.commands import CommandError, Context
 from dotenv import load_dotenv
 
 from util.config import Config
@@ -52,16 +51,16 @@ class DamaBot(commands.Bot):
     async def on_ready(self):
         log.info(f"Online as {self.user.name}. ID: {self.user.id}")
 
-    async def on_command_error(self, ctx: Context, error: CommandError):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.reply("Missing argument '" + error.param.name + "'")
-        elif isinstance(error, commands.CommandNotFound):
-            await ctx.reply("Unknown command.")
-        elif isinstance(error, CommandError):
-            log.warning("Passing CommandError", error)
-        else:
-            log.error(f"Error during command: {ctx.message.clean_content}", exc_info=error)
-        await super().on_command_error(ctx, error)
+    # async def on_command_error(self, ctx: Context, error: CommandError):
+    #     if isinstance(error, commands.MissingRequiredArgument):
+    #         await ctx.reply("Missing argument '" + error.param.name + "'")
+    #     elif isinstance(error, commands.CommandNotFound):
+    #         await ctx.reply("Unknown command.")
+    #     elif isinstance(error, CommandError):
+    #         log.warning("Passing CommandError", error)
+    #     else:
+    #         log.error(f"Error during command: {ctx.message.clean_content}", exc_info=error)
+    #     await super().on_command_error(ctx, error)
 
 
 if __name__ == "__main__":

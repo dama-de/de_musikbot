@@ -115,6 +115,14 @@ class Admin(Cog):
         await self._react_ok(ctx)
 
     @command(hidden=True)
+    async def get(self, ctx: Context, config: str, item: str = None):
+        conf = Config(config)
+        if item:
+            await ctx.reply(str(conf.data[item]))
+        else:
+            await ctx.reply(str(conf.data))
+
+    @command(hidden=True)
     async def set(self, ctx: Context, config: str, item: str, value: str):
         conf = Config(config)
         conf.data[item] = value
