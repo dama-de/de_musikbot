@@ -5,6 +5,7 @@ Ein Bot mit Musikfunktionen.
 - [Show existing Last.fm API accounts](https://www.last.fm/api/accounts)
 - [Manage Spotify API accounts](https://developer.spotify.com/dashboard/applications)
 - [Manage Genius API accounts](https://genius.com/api-clients)
+- [Manage OpenAI API keys](https://beta.openai.com/account/api-keys)
 
 1. Create a new file `.env` from the sample.env template
 1. Run `sudo docker-compose up --build`
