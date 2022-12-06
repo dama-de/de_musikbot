@@ -1,13 +1,21 @@
 import os
+import shutil
 from unittest.mock import AsyncMock
 
 import dotenv
 import pytest
 from pytest_mock import MockFixture
 
+from util.config import Config
+
 
 # pytest directory-wide configuration file
 # https://docs.pytest.org/en/6.2.x/writing_plugins.html#conftest-py-local-per-directory-plugins
+
+
+def pytest_runtest_teardown(item, nextitem):
+    shutil.rmtree("./data/", ignore_errors=True)
+    Config._instances.clear()
 
 
 @pytest.fixture(scope="session", autouse=True)

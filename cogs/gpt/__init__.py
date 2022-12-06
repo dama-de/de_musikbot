@@ -5,7 +5,11 @@ import openai
 from discord import Interaction
 from discord.ext.commands import Cog, Bot, Context, hybrid_command, is_owner, command
 
+from cogs.gpt.classes import GPTConfig
 from util.config import Config
+
+
+# TODO - Messages over 2000 chars
 
 
 async def setup(bot: Bot):
@@ -14,16 +18,7 @@ async def setup(bot: Bot):
 
 class GPT(Cog):
     def __init__(self) -> None:
-        self._config = Config("ai")
-
-        if "temperature" not in self._config.data:
-            self._config.data["temperature"] = 0.1
-        if "model" not in self._config.data:
-            self._config.data["model"] = "text-davinci-003"
-        if "max_tokens" not in self._config.data:
-            self._config.data["max_tokens"] = 1024
-
-        self._config.save()
+        self._config = GPTConfig()
 
     @hybrid_command()
     @is_owner()
@@ -33,7 +28,7 @@ class GPT(Cog):
     @command()
     @is_owner()
     async def gpt_temp(self, ctx: Context, temperature: float):
-        self._config.data["temperature"] = temperature
+        self._config.temperature = temperature
         self._config.save()
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
@@ -44,11 +39,11 @@ class GPT(Cog):
         async with ctx.typing():
             try:
                 completion = openai.Completion.create(
-                    model=self._config.data["model"],
+                    model=self._config.model,
                     prompt=query,
                     user=ctx.author.name,
-                    temperature=self._config.data["temperature"],
-                    max_tokens=self._config.data["max_tokens"]
+                    temperature=self._config.temperature,
+                    max_tokens=self._config.max_tokens
                 )
                 await ctx.reply(completion.choices[0].text)
             except openai.error.InvalidRequestError as e:
@@ -66,7 +61,7 @@ class ModelDropdown(discord.ui.Select):
         self._config = config
 
         models = ["text-davinci-003", "text-curie-001", "code-davinci-002", "code-cushman-001"]
-        selected_model = self._config.data["model"]
+        selected_model = self._config.model
 
         options = [
             discord.SelectOption(label=model, value=model, default=(model == selected_model))
@@ -76,6 +71,6 @@ class ModelDropdown(discord.ui.Select):
         super().__init__(placeholder="Choose a model", options=options)
 
     async def callback(self, interaction: Interaction):
-        self._config.data["model"] = self.values[0]
+        self._config.model = self.values[0]
         self._config.save()
         await interaction.response.send_message("Ok", delete_after=1, ephemeral=True)
