@@ -39,8 +39,8 @@ class Config:
         else:
             Config._instances[name] = self.data
             Path(self.datadir).mkdir(parents=True, exist_ok=True)
-            if not self.load():
-                self._init_defaults()
+            self._init_defaults()
+            self.load()
 
     def _init_defaults(self):
         """Subclasses should set their default values in here instead of `__init__`"""
@@ -94,7 +94,6 @@ class Config:
     def load(self) -> bool:
         if os.path.exists(self.datafile):
             with open(self.datafile, "r") as file:
-                self.data.clear()
                 self.data.update(json.loads(file.read()))
                 return True
         return False
