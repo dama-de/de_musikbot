@@ -8,6 +8,21 @@ _log = logging.getLogger(__name__)
 
 
 class Config:
+    """Helper class for reading and writing json-based config files. The data for one file is shared across
+    all :class:`Config` instances pointing to that file. You may create subclasses in the following style:
+
+    .. code-block:: python3
+
+        class MyConfig(Config):
+            my_str: str
+            my_int: int
+
+            def __init__(self):
+                super().__init__(self, "myconfig")
+
+            def _init_defaults(self):
+                self.my_int = 5
+    """
     __slots__ = ["_name", "_data", "datadir", "datafile"]
     _instances = {}
 
@@ -28,6 +43,7 @@ class Config:
                 self._init_defaults()
 
     def _init_defaults(self):
+        """Subclasses should set their default values in here instead of `__init__`"""
         pass
 
     def __eq__(self, o: object) -> bool:
@@ -63,11 +79,11 @@ class Config:
             self.save()
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def data(self):
+    def data(self) -> dict:
         return self._data
 
     def save(self):

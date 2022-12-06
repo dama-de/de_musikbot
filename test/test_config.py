@@ -1,17 +1,25 @@
 from util.config import Config
 
 
+# Tests for util.config.Config
+
 def test_config_instances():
     a = Config("_foo")
     b = Config("_foo")
     c = Config("_bar")
+
+    # Should be equal, but not the same object
     assert a == b
+    assert a is not b
+
+    # Should point to the same data
     assert a._data is b._data
+
+    # Should be inequal to different configs
     assert a != c
 
 
 def test_config_subclassing():
-    # Declare a subclass of config
     class SubConfig(Config):
         my_string: str
         my_int: int
@@ -24,7 +32,7 @@ def test_config_subclassing():
         def _init_defaults(self):
             self.my_default = "test"
 
-    # Initialize, write some data to it and reload
+    # Initialize, write some data to it and reload from disk
     conf = SubConfig()
     conf.my_string = "hello world"
     conf.my_int = 5
