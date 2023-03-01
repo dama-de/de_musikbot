@@ -4,6 +4,7 @@ import discord
 from discord import Interaction
 from discord.ext.commands import Cog, Bot, Context, hybrid_command, is_owner
 
+import util
 from cogs.gpt.ai import AIError
 from cogs.gpt.classes import GPTConfig
 
@@ -31,7 +32,8 @@ class GPT(Cog):
                                            max_tokens=self._config.max_tokens,
                                            presence_penalty=self._config.presence_penalty,
                                            user=ctx.author.name)
-                await ctx.reply(text[:2000])  # Make sure to stay within discord char limits
+                text = f"> {prompt}{text}"
+                await util.split_message(text, ctx)
             except AIError as e:
                 await ctx.reply(str(e))
 
@@ -48,7 +50,8 @@ class GPT(Cog):
                                            user=ctx.author.name)
                 # Remove the line-prefix
                 text = re.sub(r"^\+", "", text, flags=re.MULTILINE)
-                await ctx.reply(f"```{text[:1990]}\n```")
+                text = f"```{text}\n```"
+                await util.split_message(text, ctx)
             except AIError as e:
                 await ctx.reply(str(e))
 
@@ -62,11 +65,7 @@ class GPT(Cog):
                                                 presence_penalty=self._config.presence_penalty,
                                                 user=ctx.author.name)
                 text = f"> {prompt}\n\n{text}"
-
-                chunk_len = 2000
-                messages_to_send = [text[idx: idx + chunk_len] for idx in range(0, len(text), chunk_len)]
-                await ctx.reply(messages_to_send[0])
-                [await ctx.send(msg) for msg in messages_to_send[1:]]
+                await util.split_message(text, ctx)
             except AIError as e:
                 await ctx.reply(str(e))
 
