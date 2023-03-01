@@ -52,6 +52,24 @@ class GPT(Cog):
             except AIError as e:
                 await ctx.reply(str(e))
 
+    @hybrid_command()
+    async def chatgpt(self, ctx: Context, *, prompt: str):
+        """Talk to ChatGPT!"""
+        async with ctx.typing():
+            try:
+                text = await ai.chat_completion(prompt, self._config.system_message, model=self._config.chat_model,
+                                                temperature=self._config.code_temperature,
+                                                presence_penalty=self._config.presence_penalty,
+                                                user=ctx.author.name)
+                text = f"> {prompt}\n\n{text}"
+
+                chunk_len = 2000
+                messages_to_send = [text[idx: idx + chunk_len] for idx in range(0, len(text), chunk_len)]
+                await ctx.reply(messages_to_send[0])
+                [await ctx.send(msg) for msg in messages_to_send[1:]]
+            except AIError as e:
+                await ctx.reply(str(e))
+
 
 class SettingsView(discord.ui.View):
     def __init__(self, config: GPTConfig):
