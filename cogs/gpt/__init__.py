@@ -50,8 +50,7 @@ class GPT(Cog):
                                            user=ctx.author.name)
                 # Remove the line-prefix
                 text = re.sub(r"^\+", "", text, flags=re.MULTILINE)
-                text = f"```{text}\n```"
-                await util.split_message(text, ctx)
+                await util.split_message(text, ctx, prefix="```\n", suffix="\n```")
             except AIError as e:
                 await ctx.reply(str(e))
 

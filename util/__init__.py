@@ -14,9 +14,9 @@ _log = logging.getLogger(__name__)
 #     return result
 
 
-async def split_message(text: str, ctx: Context):
-    chunk_len = 2000
-    messages_to_send = [text[idx: idx + chunk_len] for idx in range(0, len(text), chunk_len)]
+async def split_message(text: str, ctx: Context, prefix="", suffix=""):
+    chunk_len = 2000 - len(prefix) - len(suffix)
+    messages_to_send = [prefix + text[idx: idx + chunk_len] + suffix for idx in range(0, len(text), chunk_len)]
     await ctx.reply(messages_to_send[0])
     [await ctx.send(msg) for msg in messages_to_send[1:]]
 
