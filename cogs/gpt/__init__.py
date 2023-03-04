@@ -22,13 +22,13 @@ class GPT(Cog):
         self._config = GPTConfig()
         self._bot = bot
 
-    @hybrid_command(hidden=True)
+    @hybrid_command(hidden=True, enabled=False)
     @is_owner()
     async def gpt_model(self, ctx: Context):
         """Choose the GPT models used"""
         await ctx.reply(content="Choose the models", view=SettingsView(self._config), ephemeral=True)
 
-    @hybrid_command()
+    @hybrid_command(enabled=False)
     async def gpt(self, ctx: Context, *, prompt: str):
         """Let a GPT-3 AI respond to your prompt. Try \"Tell me a joke!\""""
         async with ctx.typing():
@@ -42,7 +42,7 @@ class GPT(Cog):
             except AIError as e:
                 await ctx.reply(str(e))
 
-    @hybrid_command()
+    @hybrid_command(enabled=False)
     async def code(self, ctx: Context, *, prompt: str):
         """Let a GPT-3 AI complete your code. Format your prompt like a comment, and mention the language."""
         async with ctx.typing():
