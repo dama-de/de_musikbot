@@ -1,10 +1,10 @@
-discord.py == 2.1.0
-pylast == 5.0.0
-tekore == 4.4.0
-python-dotenv == 0.20.0
-lyricsgenius == 3.0.1
-pytest == 6.2.5
-pytest-asyncio == 0.16.0
-pytest-mock == 3.6.1
-dpytest == 0.5.3
+discord.py==2.2.2
+pylast==5.1.0
+tekore==4.5.0
+python-dotenv==1.0.0
+lyricsgenius==3.0.1
+pytest==7.2.2
+pytest-asyncio==0.20.3
+pytest-mock==3.10.0
+dpytest==0.6.3
 openai==v0.27.0
