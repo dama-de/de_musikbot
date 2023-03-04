@@ -48,6 +48,9 @@ class Admin(Cog):
 
     @command(hidden=True)
     async def load(self, ctx: Context, cog: str):
+        if not cog.startswith("cogs."):
+            cog = "cogs." + cog
+
         resolved = importlib.util.find_spec(cog, None)
         if resolved:
             await ctx.bot.load_extension(cog)
@@ -57,6 +60,9 @@ class Admin(Cog):
 
     @command(hidden=True)
     async def unload(self, ctx: Context, cog: str):
+        if not cog.startswith("cogs."):
+            cog = "cogs." + cog
+
         resolved = importlib.util.find_spec(cog, None)
         if resolved:
             await ctx.bot.unload_extension(cog)
@@ -78,6 +84,9 @@ class Admin(Cog):
 
     @command(hidden=True)
     async def enable(self, ctx: Context, cog: str):
+        if not cog.startswith("cogs."):
+            cog = "cogs." + cog
+
         resolved = importlib.util.find_spec(cog, None)
         if resolved:
             if cog not in self.config.data:
@@ -90,6 +99,9 @@ class Admin(Cog):
 
     @command(hidden=True)
     async def disable(self, ctx: Context, cog: str):
+        if not cog.startswith("cogs."):
+            cog = "cogs." + cog
+
         if cog in ctx.bot.extensions:
             self.config.data["cogs.enabled"].remove(cog)
             self._save()
