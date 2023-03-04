@@ -22,7 +22,7 @@ def main():
 
 
 def setup_logging():
-    _loglevel = os.environ["LOG_LEVEL"] if "LOG_LEVEL" in os.environ else "INFO"
+    _loglevel = os.environ["LOG_LEVEL"] if "LOG_LEVEL" in os.environ else "DEBUG"
     logging.basicConfig(level=_loglevel, format="%(levelname)-7s | %(asctime)s | %(name)-18s | %(message)s")
     logging.getLogger("discord").setLevel("INFO")
 
