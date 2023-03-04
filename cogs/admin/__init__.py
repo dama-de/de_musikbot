@@ -64,8 +64,11 @@ class Admin(Cog):
         else:
             await ctx.message.add_reaction("\N{BLACK QUESTION MARK ORNAMENT}")
 
-    @command(hidden=True)
+    @command(aliases=["r"], hidden=True)
     async def reload(self, ctx: Context, cog: str):
+        if not cog.startswith("cogs."):
+            cog = "cogs." + cog
+
         resolved = importlib.util.find_spec(cog, None)
         if resolved:
             await ctx.bot.reload_extension(cog)
