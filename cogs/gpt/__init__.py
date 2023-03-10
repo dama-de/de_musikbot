@@ -60,11 +60,14 @@ class GPT(Cog):
                 await ctx.reply(str(e))
 
     @hybrid_command()
-    async def chatgpt(self, ctx: Context, *, prompt: str):
+    async def chatgpt(self, ctx: Context, *, prompt: str, preprompt=""):
         """Talk to ChatGPT!"""
+        if not preprompt:
+            preprompt = self._config.system_message
+
         async with ctx.typing():
             try:
-                text = await ai.chat_completion(prompt, self._config.system_message, model=self._config.chat_model,
+                text = await ai.chat_completion(prompt, preprompt, model=self._config.chat_model,
                                                 temperature=self._config.code_temperature,
                                                 presence_penalty=self._config.presence_penalty,
                                                 user=ctx.author.name)
