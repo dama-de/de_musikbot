@@ -1,10 +1,12 @@
 import logging
 import re
-from typing import List
+from typing import List, Any, Tuple, Union
 
 import discord
 from discord import Interaction, Message
+from discord.app_commands import describe
 from discord.ext.commands import Cog, Bot, Context, hybrid_command, is_owner
+from discord.utils import find
 
 import util
 from cogs.gpt.ai import AIError
@@ -18,9 +20,12 @@ async def setup(bot: Bot):
 
 
 class GPT(Cog):
+    _system_message: List[Union[Tuple[Any, str], None]]
+
     def __init__(self, bot: Bot) -> None:
         self._config = GPTConfig()
         self._bot = bot
+        self._system_message = [None] * 100
 
     @hybrid_command(hidden=True, enabled=False)
     @is_owner()
@@ -60,12 +65,16 @@ class GPT(Cog):
                 await ctx.reply(str(e))
 
     @hybrid_command()
+    @describe(preprompt="A primer message to set the behaviour of the AI")
     async def chatgpt(self, ctx: Context, *, prompt: str, preprompt=""):
         """Talk to ChatGPT!"""
-        if not preprompt:
-            preprompt = self._config.system_message
-
         async with ctx.typing():
+            if not preprompt:
+                preprompt = self._config.system_message
+
+            # We can't retrieve interaction parameters later, so save the system_message
+            self._save_system_message(ctx, preprompt)
+
             try:
                 text = await ai.chat_completion(prompt, preprompt, model=self._config.chat_model,
                                                 temperature=self._config.code_temperature,
@@ -75,6 +84,15 @@ class GPT(Cog):
                 await util.split_message(text, ctx)
             except AIError as e:
                 await ctx.reply(str(e))
+
+    def _save_system_message(self, ctx: Context, system_message: str):
+        key = ctx.interaction.id if ctx.interaction else ctx.message.id
+        self._system_message.pop()
+        self._system_message.insert(0, (key, system_message))
+
+    def _get_system_message(self, ctx: Context):
+        key = ctx.message.interaction.id if ctx.message.interaction else ctx.message.id
+        return find(lambda tup: tup and tup[0] == key, self._system_message)[1]
 
     @Cog.listener()
     async def on_message(self, message: Message):
@@ -104,6 +122,13 @@ class GPT(Cog):
         else:
             return
 
+        # Retrieve original system_message, that we should've saved earlier
+        # Doesn't work after bot restart, but that's no huge problem
+        system_message = self._get_system_message(initial_ctx)
+        if not system_message:
+            _log.warning("Could not retrieve system_message for ctx %s", initial_ctx)
+            system_message = self._config.system_message
+
         api_history = [
             {
                 "role": "assistant" if msg.author.bot else "user",
@@ -111,7 +136,7 @@ class GPT(Cog):
             }
             for msg in history
         ]
-        api_history.insert(0, {"role": "system", "content": self._config.system_message})
+        api_history.insert(0, {"role": "system", "content": system_message})
 
         ctx = await self._bot.get_context(message)
         async with ctx.typing():
