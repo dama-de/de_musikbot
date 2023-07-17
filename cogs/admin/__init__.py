@@ -3,7 +3,7 @@ import importlib.util
 import json
 import logging
 
-from discord import Guild
+from discord import Guild, Permissions
 from discord.ext.commands import Bot, Cog, Context, command
 
 from util.config import Config
@@ -121,6 +121,13 @@ class Admin(Cog):
             await asyncio.wait([appcommand.delete() for appcommand in commands])
 
         await self._react_ok(ctx)
+
+    @command(hidden=True)
+    async def invite(self, ctx: Context):
+        perms = Permissions(create_expressions=True, manage_expressions=True).value
+        await ctx.author.send(
+            f"https://discord.com/api/oauth2/authorize?client_id={ctx.bot.application_id}&permissions={perms}&scope=bot"
+        )
 
     @command(hidden=True)
     async def leave(self, ctx: Context, server_id: int = None):
