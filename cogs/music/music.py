@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Optional, Literal
+from typing import Optional, Literal, Collection, Union
 
 import discord
 import pylast
@@ -53,10 +53,13 @@ class Music(Cog):
             self.data["names"] = {}
             self.config.save()
 
-    def get_lastfm_user(self, user: discord.User) -> Optional[str]:
+    def get_lastfm_user(self, user: Union[discord.User, discord.Member]) -> Optional[str]:
         if str(user.id) in self.data["names"]:
             return self.data["names"][str(user.id)]
         raise NotRegisteredError(user)
+
+    def get_guild_lastfm_users(self, guild: discord.Guild) -> Collection[discord.Member]:
+        return [u for u in guild.members if str(u.id) in self.data["names"]]
 
     async def reply_on_error(self, ctx: Context, message: str):
         if is_slash(ctx):
@@ -365,4 +368,46 @@ class Music(Cog):
             embed = discord.Embed(title='Genius Lyrics')
             embed.add_field(name='Link', value=str(song.url))
             embed.set_thumbnail(url=song.header_image_url)
+            await ctx.send(embed=embed)
+
+    # @app_command(description="Create a custom chart")
+    # async def chart(self, ctx: Context, search_by: Literal["artist", "album"], search_query: str = None, user: Member = None):
+
+    @hybrid_command(description="See who has the most plays of an artist or album")
+    async def who_knows(self, ctx: Context, type: Literal["artist", "album", "track"], *, search_query: str = None):
+        async with ctx.typing():
+            lastfm_user = self.get_lastfm_user(ctx.author)
+            searchee: Union[pylast.Artist, pylast.Album, pylast.Track]
+
+            # Use the current scrobble if no search was submitted
+            scrobble = None
+            if not search_query:
+                scrobble = (await search.get_scrobble(lastfm_user)).origin
+                # track = scrobble.origin
+                # artist = scrobble.origin.get_artist()
+                # album = scrobble.origin.get_album()
+                if not scrobble:
+                    await self.reply_on_error(ctx, "Nothing is currently scrobbling.")
+                    return
+
+            if type == "artist":
+                searchee = scrobble.get_artist() if scrobble else (
+                    await search.search_lastfm_artist(search_query)).origin
+            elif type == "album":
+                searchee = scrobble.get_album() if scrobble else (await search.search_lastfm_album(search_query)).origin
+            elif type == "track":
+                searchee = scrobble if scrobble else (await search.search_lastfm_track(search_query)).origin
+
+            results = {}
+            for member in self.get_guild_lastfm_users(ctx.guild):
+                searchee.username = self.get_lastfm_user(member)
+                # results[member] = await asyncio.to_thread(searchee.get_userplaycount)
+                playcount = searchee.get_userplaycount()
+                if playcount:
+                    results[member] = playcount
+            sorted_results = sorted(results.items(), key=lambda i: i[1],
+                                    reverse=True)  # Sort by value of results (playcount)
+
+            embed = discord.Embed(title=f"{searchee.get_name()}")
+            embed.description = "\n".join([f"{r[0].display_name}: {r[1]}" for r in sorted_results])
             await ctx.send(embed=embed)

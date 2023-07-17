@@ -1,5 +1,7 @@
 import datetime
 
+import pylast
+
 
 class NamedBase:
     name: str = ""
@@ -35,12 +37,14 @@ class Artist(NamedBase):
     img_url: str = None
     tags: str = None
     popularity: int = None
+    origin: pylast.Artist = None
 
 
 class Track(NamedBase):
     length: int = None
     url: str = None
     popularity: int = None
+    origin: pylast.Track = None
 
     def __init__(self):
         self._artist = Artist()
@@ -72,6 +76,7 @@ class Album(NamedBase):
     url: str = None
     img_url: str = None
     popularity: int = None
+    origin: pylast.Album = None
 
     def __init__(self):
         self._artist = Artist()
