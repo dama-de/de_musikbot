@@ -219,6 +219,8 @@ def _pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
     track.origin = data
     track.name = data.get_name()
     track.artist.name = data.get_artist().get_name()
+    track.artist.url = data.get_artist().get_url()
+    track.artist.origin = data.get_artist()
     track.url = data.get_url()
 
     if data.get_album():
