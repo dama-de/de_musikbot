@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import logging
 from typing import Optional, Literal, Collection, Union
 
@@ -373,41 +374,46 @@ class Music(Cog):
     # @app_command(description="Create a custom chart")
     # async def chart(self, ctx: Context, search_by: Literal["artist", "album"], search_query: str = None, user: Member = None):
 
-    @hybrid_command(description="See who has the most plays of an artist or album")
+    @hybrid_command(description="See who has the most plays of a track, album, or artist", aliases=["wk"])
     async def who_knows(self, ctx: Context, type: Literal["artist", "album", "track"], *, search_query: str = None):
         async with ctx.typing():
             lastfm_user = self.get_lastfm_user(ctx.author)
-            searchee: Union[pylast.Artist, pylast.Album, pylast.Track]
+            subject: Union[Album, Artist, Track]
 
             # Use the current scrobble if no search was submitted
             scrobble = None
             if not search_query:
-                scrobble = (await search.get_scrobble(lastfm_user)).origin
-                # track = scrobble.origin
-                # artist = scrobble.origin.get_artist()
-                # album = scrobble.origin.get_album()
+                scrobble = await search.get_scrobble(lastfm_user)
                 if not scrobble:
                     await self.reply_on_error(ctx, "Nothing is currently scrobbling.")
                     return
 
             if type == "artist":
-                searchee = scrobble.get_artist() if scrobble else (
-                    await search.search_lastfm_artist(search_query)).origin
+                subject = scrobble.artist if scrobble else await search.search_lastfm_artist(search_query)
+                title = subject.name
             elif type == "album":
-                searchee = scrobble.get_album() if scrobble else (await search.search_lastfm_album(search_query)).origin
+                subject = scrobble.album if scrobble else await search.search_lastfm_album(search_query)
+                title = f"{subject.artist.name} - {subject.name}"
             elif type == "track":
-                searchee = scrobble if scrobble else (await search.search_lastfm_track(search_query)).origin
+                subject = scrobble if scrobble else await search.search_lastfm_track(search_query)
+                title = f"{subject.name} - {subject.artist.name}"
 
-            results = {}
+            async def get_playcount_for_member(lfm: Union[pylast.Track, pylast.Album, pylast.Artist],
+                                               member: discord.Member):
+                lfm = copy.copy(lfm)
+                lfm.username = self.get_lastfm_user(member)
+                playcount = await asyncio.to_thread(lfm.get_userplaycount)
+                return member, playcount
+
+            coros = []
             for member in self.get_guild_lastfm_users(ctx.guild):
-                searchee.username = self.get_lastfm_user(member)
-                # results[member] = await asyncio.to_thread(searchee.get_userplaycount)
-                playcount = searchee.get_userplaycount()
-                if playcount:
-                    results[member] = playcount
-            sorted_results = sorted(results.items(), key=lambda i: i[1],
-                                    reverse=True)  # Sort by value of results (playcount)
+                coros.append(get_playcount_for_member(subject.origin, member))
+            results = {member: playcount for member, playcount in await asyncio.gather(*coros)}
+            # Exclude 0 plays
+            filtered_results = filter(lambda r: r[1] > 0, results.items())
+            # Sort by playcount
+            sorted_results = sorted(filtered_results, key=lambda i: i[1], reverse=True)
 
-            embed = discord.Embed(title=f"{searchee.get_name()}")
+            embed = discord.Embed(title=title, url=subject.url)
             embed.description = "\n".join([f"{r[0].display_name}: {r[1]}" for r in sorted_results])
             await ctx.send(embed=embed)

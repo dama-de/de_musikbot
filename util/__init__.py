@@ -29,4 +29,6 @@ def get_command(ctx: Context) -> str:
         maybe_command = ctx.interaction.command()
         if isinstance(maybe_command, Command):
             return "/" + maybe_command.qualified_name
-    return ctx.message.clean_content()
+
+    # noinspection PyTypeChecker
+    return ctx.message.clean_content
