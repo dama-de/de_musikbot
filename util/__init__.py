@@ -1,4 +1,5 @@
 import logging
+import re
 
 from discord.app_commands import Command
 from discord.ext.commands import Context
@@ -32,3 +33,7 @@ def get_command(ctx: Context) -> str:
 
     # noinspection PyTypeChecker
     return ctx.message.clean_content
+
+
+def quote(text: str) -> str:
+    return re.sub("^", "> ", text, flags=re.MULTILINE)

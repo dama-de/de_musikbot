@@ -4,7 +4,7 @@ from typing import List, Any, Tuple, Union
 
 import discord
 from discord import Interaction, Message
-from discord.app_commands import describe
+from discord.app_commands import describe, ContextMenu
 from discord.ext.commands import Cog, Bot, Context, hybrid_command, is_owner
 from discord.utils import find
 
@@ -26,6 +26,13 @@ class GPT(Cog):
         self._config = GPTConfig()
         self._bot = bot
         self._system_message = [None] * 100
+        self._ctx_menu = ContextMenu(name="ChatGPT", callback=self.chatgpt_context_menu)
+
+    async def cog_load(self) -> None:
+        self._bot.tree.add_command(self._ctx_menu)
+
+    async def cog_unload(self) -> None:
+        self._bot.tree.remove_command(self._ctx_menu.name, type=self._ctx_menu.type)
 
     @hybrid_command(hidden=True, enabled=False)
     @is_owner()
@@ -42,7 +49,7 @@ class GPT(Cog):
                                            max_tokens=self._config.max_tokens,
                                            presence_penalty=self._config.presence_penalty,
                                            user=ctx.author.name)
-                text = f"> {prompt}{text}"
+                text = f"{util.quote(prompt)}{text}"
                 await util.split_message(text, ctx)
             except AIError as e:
                 await ctx.reply(str(e))
@@ -80,7 +87,7 @@ class GPT(Cog):
                                                 temperature=self._config.code_temperature,
                                                 presence_penalty=self._config.presence_penalty,
                                                 user=ctx.author.name)
-                text = f"> {prompt}\n\n{text}"
+                text = f"{util.quote(prompt)}\n\n{text}"
                 await util.split_message(text, ctx)
             except AIError as e:
                 await ctx.reply(str(e))
@@ -93,6 +100,9 @@ class GPT(Cog):
     def _get_system_message(self, ctx: Context):
         key = ctx.message.interaction.id if ctx.message.interaction else ctx.message.id
         return find(lambda tup: tup and tup[0] == key, self._system_message)[1]
+
+    async def chatgpt_context_menu(self, interaction: Interaction, msg: Message):
+        await self.chatgpt(await self._bot.get_context(interaction), prompt=msg.clean_content)
 
     @Cog.listener()
     async def on_message(self, message: Message):
@@ -113,7 +123,7 @@ class GPT(Cog):
         initial = history[0]
 
         # Check that the reply history originates in a valid conversational gpt command
-        valid_cmds = ["chatgpt"]
+        valid_cmds = ["chatgpt", "ChatGPT"]
         initial_ctx = await self._bot.get_context(initial)
         if initial.author.id is self._bot.user.id and initial.interaction and initial.interaction.name in valid_cmds:
             pass
