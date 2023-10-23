@@ -26,6 +26,7 @@ def setup_logging():
     logging.basicConfig(level=_loglevel, format="%(levelname)-7s | %(asctime)s | %(name)-18s | %(message)s")
     logging.getLogger("discord").setLevel("INFO")
     logging.getLogger("pylast").setLevel("INFO")
+    logging.getLogger("PIL").setLevel("INFO")
 
 
 class DamaBot(commands.Bot):
