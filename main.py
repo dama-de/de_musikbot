@@ -59,7 +59,7 @@ class DamaBot(commands.Bot):
         elif isinstance(error, commands.CommandNotFound):
             await ctx.reply("Unknown command.")
         elif isinstance(error, CommandError):
-            log.warning("Passing CommandError", error)
+            log.warning("Passing CommandError", exc_info=error)
         else:
             log.error(f"Error during command: {ctx.message.clean_content}", exc_info=error)
         await super().on_command_error(ctx, error)
