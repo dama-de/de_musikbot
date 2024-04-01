@@ -118,7 +118,7 @@ class Admin(Cog):
     async def clearslash(self, ctx: Context, guild: Guild = None):
         async with ctx.typing():
             commands = await ctx.bot.tree.fetch_commands(guild=guild)
-            await asyncio.wait([appcommand.delete() for appcommand in commands])
+            await asyncio.wait([asyncio.create_task(appcommand.delete()) for appcommand in commands])
 
         await self._react_ok(ctx)
 
