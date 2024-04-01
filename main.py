@@ -1,11 +1,12 @@
 import logging
 import os
 
-from discord import Intents
+from discord import Intents, Guild
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context
 from dotenv import load_dotenv
 
+import util
 from util.config import Config
 
 log = logging.getLogger(__name__)
@@ -52,7 +53,16 @@ class DamaBot(commands.Bot):
             await self.load_extension(cog)
 
     async def on_ready(self):
-        log.info(f"Online as {self.user.name}. ID: {self.user.id}")
+        log.info(f"Online as \"{self.user.name}\" on {len(self.guilds)} servers. ID: {self.user.id}")
+
+    async def on_guild_join(self, guild: Guild):
+        log.info(f"Joined guild {guild.name} ({guild.id})")
+
+    async def on_guild_remove(self, guild: Guild):
+        log.info(f"Left guild {guild.name} ({guild.id})")
+
+    async def on_command(self, ctx: Context):
+        log.debug(f"{ctx.author.name}: {util.get_command(ctx)}")
 
     async def on_command_error(self, ctx: Context, error: CommandError):
         if isinstance(error, commands.MissingRequiredArgument):

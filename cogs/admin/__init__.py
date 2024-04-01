@@ -111,7 +111,9 @@ class Admin(Cog):
 
     @command(hidden=True)
     async def syncslash(self, ctx: Context):
-        await ctx.bot.tree.sync()
+        tree = ctx.bot.tree
+        _log.info(f"Syncing {len(tree.get_commands())} interactions")
+        await tree.sync()
         await self._react_ok(ctx)
 
     @command(hidden=True)
