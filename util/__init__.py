@@ -27,7 +27,7 @@ def get_command(ctx: Context) -> str:
     Retrieve the original command as a string from a commands.Context or SlashContext.
     """
     if ctx.interaction:
-        maybe_command = ctx.interaction.command()
+        maybe_command = ctx.interaction.command
         if isinstance(maybe_command, Command):
             return "/" + maybe_command.qualified_name
 
