@@ -143,9 +143,9 @@ class Admin(Cog):
     async def get(self, ctx: Context, config: str, item: str = None):
         conf = Config(config)
         if item:
-            msg = f"`{json.dumps({item: conf.data[item]})}`"
+            msg = f"`{json.dumps({item: conf.data[item]}, ensure_ascii=False)}`"
         else:
-            msg = f"```\n{json.dumps(conf.data, indent=4)}\n```"
+            msg = f"```\n{json.dumps(conf.data, indent=4, ensure_ascii=False)}\n```"
         await ctx.reply(msg)
 
     @command(hidden=True)
