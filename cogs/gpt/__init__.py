@@ -23,7 +23,10 @@ class GPT(Cog):
     def __init__(self, bot: Bot) -> None:
         self._config = GPTConfig()
         self._bot = bot
+
+        # Tuples of (response_msg_id, system_message)
         self._system_message = [None] * 100
+
         self._ctx_menu = ContextMenu(name="ChatGPT", callback=self.chatgpt_context_menu)
 
     async def cog_load(self) -> None:
@@ -60,7 +63,8 @@ class GPT(Cog):
 
     def _get_system_message(self, ctx: Context):
         key = ctx.message.interaction.id if ctx.message.interaction else ctx.message.id
-        return find(lambda tup: tup and tup[0] == key, self._system_message)[1]
+        found_sys_message = find(lambda tup: tup and tup[0] == key, self._system_message)
+        return found_sys_message[1] if found_sys_message else None
 
     async def chatgpt_context_menu(self, interaction: Interaction, msg: Message):
         await self.chatgpt(await self._bot.get_context(interaction), prompt=msg.clean_content)
