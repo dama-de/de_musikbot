@@ -1,14 +1,14 @@
 import logging
-from typing import List, Any, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 from discord import Interaction, Message
-from discord.app_commands import describe, ContextMenu
-from discord.ext.commands import Cog, Bot, Context, hybrid_command
+from discord.app_commands import ContextMenu, describe
+from discord.ext.commands import Bot, Cog, Context, hybrid_command
 from discord.utils import find
 
-import util
 from cogs.gpt.ai import AIError
 from cogs.gpt.classes import GPTConfig
+import util
 
 _log = logging.getLogger(__name__)
 
@@ -66,6 +66,7 @@ class GPT(Cog):
         found_sys_message = find(lambda tup: tup and tup[0] == key, self._system_message)
         return found_sys_message[1] if found_sys_message else None
 
+    # TODO doesn't currently work with replies
     async def chatgpt_context_menu(self, interaction: Interaction, msg: Message):
         await self.chatgpt(await self._bot.get_context(interaction), prompt=msg.clean_content)
 
