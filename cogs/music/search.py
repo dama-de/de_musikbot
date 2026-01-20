@@ -2,12 +2,12 @@ import asyncio
 import functools
 import logging
 import os
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 import discord
 import lyricsgenius
 import tekore
-from tekore.model import SimpleAlbum, FullAlbum, SimpleArtist, FullArtist, FullTrack
+from tekore.model import FullAlbum, FullArtist, FullTrack, SimpleAlbum, SimpleArtist
 
 from .classes import *
 
@@ -223,7 +223,7 @@ def _pack_lastfm_track(data: pylast.Track) -> Optional[Track]:
     track.artist.origin = data.get_artist()
     track.url = data.get_url()
 
-    if data.get_album():
+    if data.info["album"] is not None and data.get_album():
         track._album = _pack_lastfm_album(data.get_album())
 
     return track
