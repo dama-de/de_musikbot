@@ -149,7 +149,7 @@ class Admin(Cog):
         await ctx.reply(msg)
 
     @command(hidden=True)
-    async def set(self, ctx: Context, config: str, item: str, value: str):
+    async def set(self, ctx: Context, config: str, item: str, *, value: str):
         conf = Config(config)
         conf.data[item] = value
         conf.save()
