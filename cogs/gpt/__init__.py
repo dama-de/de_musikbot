@@ -36,7 +36,7 @@ class GPT(Cog):
         self._bot.tree.remove_command(self._ctx_menu.name, type=self._ctx_menu.type)
 
     @hybrid_command()
-    @describe(preprompt="A primer message to set the behaviour of the AI")
+    @describe(preprompt="A primer message to override the behaviour of the LLM")
     async def chatgpt(self, ctx: Context, *, prompt: str, preprompt=""):
         """Talk to ChatGPT!"""
         async with ctx.typing():
@@ -47,10 +47,7 @@ class GPT(Cog):
             self._save_system_message(ctx, preprompt)
 
             try:
-                text = await ai.chat_completion(prompt, preprompt, model=self._config.chat_model,
-                                                temperature=self._config.code_temperature,
-                                                presence_penalty=self._config.presence_penalty,
-                                                user=ctx.author.name)
+                text = await ai.chat_completion(prompt, preprompt, model=self._config.chat_model, user=ctx.author.name)
                 text = f"{util.quote(prompt)}\n\n{text}"
                 await util.split_message(text, ctx)
             except AIError as e:
