@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-RUN apk add python3 py3-pip py3-aiohttp py3-pandas
+RUN apk add python3 py3-pip
 
 ADD main.py requirements.txt /bot/
 ADD cogs/ /bot/cogs/
@@ -10,5 +10,5 @@ VOLUME /data
 ENV DATA_DIR=/data
 WORKDIR /bot
 
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --break-system-packages
 ENTRYPOINT python3 main.py
