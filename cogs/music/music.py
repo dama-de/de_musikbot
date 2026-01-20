@@ -1,14 +1,15 @@
 import asyncio
 import copy
 import logging
-from typing import Optional, Literal, Collection, Union
+from typing import Collection, Literal, Optional, Union
 
 import discord
+from discord.app_commands import CommandInvokeError, describe
+from discord.ext.commands import Bot, Cog, CommandError, Context, HybridCommandError, \
+    MissingRequiredArgument, \
+    hybrid_command, hybrid_group
 import pylast
 import tekore
-from discord.app_commands import describe
-from discord.ext.commands import Bot, Cog, CommandError, CommandInvokeError, Context, MissingRequiredArgument, \
-    hybrid_command, hybrid_group
 
 from util import get_command
 from util.config import Config
@@ -74,8 +75,13 @@ class Music(Cog):
         We use this method to handle the most common errors in the cog, so it doesn't have to be
         done for each command separately. It will be called automatically from discord.py.
         """
+        # Unpack the original error for further handling
+        while (isinstance(error, HybridCommandError)
+               or isinstance(error, CommandInvokeError)
+               or isinstance(error, discord.ext.commands.CommandInvokeError)):
+            error = error.original
+
         if isinstance(error, CommandInvokeError):
-            # Unpack the original error for further handling
             error = error.original
 
         if isinstance(error, pylast.PyLastError):
@@ -118,8 +124,6 @@ class Music(Cog):
     @last.command()
     async def now(self, ctx: Context):
         """Fetch the currently playing song."""
-        author = ctx.author.display_name
-
         track = Track()
 
         # Try to retrieve the user's activity
@@ -142,7 +146,7 @@ class Music(Cog):
             track.update(sp_result)
 
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
-        embed.set_author(name=author, icon_url=ctx.author.avatar.url)
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
         embed.set_thumbnail(url=track.album.img_url or None)
 
         # Footer text, depending on where we got our data from
