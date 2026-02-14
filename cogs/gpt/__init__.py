@@ -115,8 +115,6 @@ class GPT(Cog):
         async with ctx.typing():
             try:
                 reply = await ai.history_completion(api_history, model=self._config.chat_model,
-                                                    temperature=self._config.code_temperature,
-                                                    presence_penalty=self._config.presence_penalty,
                                                     user=message.author.name)
 
                 await util.split_message(reply, ctx)
