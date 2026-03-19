@@ -139,11 +139,11 @@ class Music(Cog):
                 return
 
         # Try to enhance with Spotify data
-        sp_query = f"track:{track.name} artist:{track.artist.name}"
-        sp_query += f" album:{track.album.name}" if track.album else ""
-        sp_result = await search.search_spotify_track(sp_query)
-        if sp_result:
-            track.update(sp_result)
+        # sp_query = f"track:{track.name} artist:{track.artist.name}"
+        # sp_query += f" album:{track.album.name}" if track.album else ""
+        # sp_result = await search.search_spotify_track(sp_query)
+        # if sp_result:
+        #     track.update(sp_result)
 
         embed = discord.Embed(title="{} - {}".format(track.artist.name, track.name), url=track.url)
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
@@ -256,7 +256,7 @@ class Music(Cog):
         last_username = self.get_lastfm_user(ctx.author)
         await ctx.reply(f"https://www.last.fm/user/{last_username}")
 
-    @hybrid_command()
+    @hybrid_command(enabled=False)
     async def track(self, ctx: Context, *, search_query: str):
         """Search for a single track"""
         result = await search.search_spotify_track(search_query)
@@ -291,10 +291,10 @@ class Music(Cog):
         album.update(last_album)
         urls["Last.fm"] = last_album.url
 
-        spotify_album = await search.search_spotify_album(search_query, extended=True)
-        if spotify_album:
-            album.update(spotify_album)
-            urls["Spotify"] = spotify_album.url
+        # spotify_album = await search.search_spotify_album(search_query, extended=True)
+        # if spotify_album:
+        #     album.update(spotify_album)
+        #     urls["Spotify"] = spotify_album.url
 
         metrics = ""
         if album.date:
@@ -339,10 +339,10 @@ class Music(Cog):
         artist.update(last_result)
         urls["Last.fm"] = last_result.url
 
-        sp_result = await search.search_spotify_artist(last_result.name)
-        if sp_result:
-            artist.update(sp_result)
-            urls["Spotify"] = sp_result.url
+        # sp_result = await search.search_spotify_artist(last_result.name)
+        # if sp_result:
+        #     artist.update(sp_result)
+        #     urls["Spotify"] = sp_result.url
 
         urls["RYM"] = rym_search(artist.name, searchtype="a")
 
