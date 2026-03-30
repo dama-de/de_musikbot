@@ -1,8 +1,9 @@
-import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, get_type_hints
+from typing import Any
+
+import jsonpickle
 
 _log = logging.getLogger(__name__)
 
@@ -14,13 +15,19 @@ class Config:
     .. code-block:: python3
 
         class MyConfig(Config):
+
             my_str: str
+
             my_int: int
 
+
             def __init__(self):
+
                 super().__init__(self, "myconfig")
 
+
             def _init_defaults(self):
+
                 self.my_int = 5
     """
     __slots__ = ["_name", "_data", "datadir", "datafile"]
@@ -57,26 +64,16 @@ class Config:
         # This only gets called if the attribute could not be found by other means
         # As this is a config, in that case we try to get the attribute from our datastore
         if name in self.data:
-            # Check if there is a type hint for optimistic casting
-            hints = get_type_hints(self.__class__)
-            if name in hints:
-                hinted_type = hints[name]
-                return hinted_type(self.data[name])
-            else:
-                return self.data[name]
+            return self.data[name]
+        else:
+            return None
 
     def __setattr__(self, name: str, value: Any) -> None:
         # Prefer __slots__ over config data
         if name in self.__slots__:
             object.__setattr__(self, name, value)
         else:
-            # Check if there is a type hint for optimistic casting
-            hints = get_type_hints(self.__class__)
-            if name in hints:
-                hinted_type = hints[name]
-                self.data[name] = hinted_type(value)
-            else:
-                self.data[name] = value
+            self.data[name] = value
 
     @property
     def name(self) -> str:
@@ -88,12 +85,12 @@ class Config:
 
     def save(self):
         with open(self.datafile, "w") as file:
-            file.write(json.dumps(self.data, indent=4))
+            file.write(jsonpickle.encode(self.data, indent=4, keys=True))
             file.close()
 
     def load(self) -> bool:
         if os.path.exists(self.datafile):
             with open(self.datafile, "r") as file:
-                self.data.update(json.loads(file.read()))
+                self.data.update(jsonpickle.decode(file.read(), keys=True))
                 return True
         return False

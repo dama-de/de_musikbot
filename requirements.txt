@@ -9,3 +9,4 @@ pytest-mock==3.15.1
 dpytest==0.7.0
 openai==2.15.0
 pillow==12.1.0
+jsonpickle==4.1.1

@@ -155,5 +155,12 @@ class Admin(Cog):
         conf.save()
         await self._react_ok(ctx)
 
+    @command(hidden=True)
+    async def unset(self, ctx: Context, config: str, item: str):
+        conf = Config(config)
+        conf.data.pop(item)
+        conf.save()
+        await self._react_ok(ctx)
+
     async def _react_ok(self, ctx: Context):
         await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")

@@ -1,7 +1,7 @@
 import logging
 import os
 
-from discord import Intents, Guild
+from discord import Guild, Intents
 from discord.ext import commands
 from discord.ext.commands import CommandError, Context
 from dotenv import load_dotenv
@@ -28,6 +28,7 @@ def setup_logging():
     logging.getLogger("discord").setLevel("INFO")
     logging.getLogger("pylast").setLevel("INFO")
     logging.getLogger("PIL").setLevel("INFO")
+    logging.getLogger("httpcore").setLevel("INFO")
 
 
 class DamaBot(commands.Bot):
